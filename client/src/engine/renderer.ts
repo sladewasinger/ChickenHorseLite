@@ -21,12 +21,6 @@ export class Renderer {
 
         window.addEventListener('resize', () => this.resizeCanvas());
         this.resizeCanvas();
-
-        const ctx = this.canvas.getContext('2d');
-        if (!ctx) {
-            throw new Error('Canvas context not found');
-        }
-        ctx.translate(this.camera.width / 2, this.camera.height / 2);
     }
 
     resizeCanvas() {
@@ -35,10 +29,6 @@ export class Renderer {
     }
 
     screenToWorld(pos: Vector2D) {
-        // return new Vector2D(
-        //     (pos.x - this.camera.width / 2) / this.camera.zoom - this.camera.position.x,
-        //     (pos.y - this.camera.height / 2) / this.camera.zoom - this.camera.position.y
-        // );
         return this.getWindowToCanvas(pos.x, pos.y);
     }
 
@@ -73,27 +63,16 @@ export class Renderer {
             throw new Error('Canvas context not found');
         }
 
-        console.log("renderer zoom: ", deltaY > 0 ? "OUT" : "IN");
         let zoom = this.camera.zoom + deltaY * -0.001;
-        zoom = Math.min(Math.max(0.125, zoom), 4);
+        zoom = Math.min(Math.max(0.0625, zoom), 8);
         const scale = zoom / this.camera.zoom;
         this.scale = this.scale * scale;
-        if (this.scale < 0.1) {
-            return;
-        }
-        if (this.scale > 4) {
-            return;
-        }
-        console.log(this.scale, scale, zoom);
 
         ctx.translate(point.x, point.y);
         ctx.scale(scale, scale);
-        //ctx.setTransform(zoom, 0, 0, zoom, this.camera.width / 2, this.camera.height / 2);
         ctx.translate(-point.x, -point.y);
 
         this.camera.zoom = this.scale;
-        this.camera.position.x += point.x * scale;
-        this.camera.position.y += point.y * scale;
     }
 
     pan(x: number, y: number) {
@@ -102,9 +81,13 @@ export class Renderer {
             throw new Error('Canvas context not found');
         }
 
+        const zoom = this.camera.zoom;
+        x = x / zoom;
+        y = y / zoom;
+
         ctx.translate(x, y);
-        this.camera.position.x += this.mouse.deltaX;
-        this.camera.position.y += this.mouse.deltaY;
+        this.camera.position.x += x;
+        this.camera.position.y += y;
     }
 
     start(engine: Engine) {
@@ -125,17 +108,6 @@ export class Renderer {
         ctx.scale(1, 1);
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         ctx.restore();
-
-        // const scale = this.camera.zoom;
-
-        // if (this.prevCameraZoom !== this.camera.zoom) {
-        //     this.zoomAroundPoint(this.camera.zoom, this.camera.position);
-        //     this.prevCameraZoom = this.camera.zoom;
-        // } else {
-
-        //     ctx.setTransform(scale, 0, 0, scale, this.camera.width / 2, this.camera.height / 2);
-        //     ctx.translate(-this.camera.position.x, -this.camera.position.y);
-        // }
 
         for (const body of bodies) {
             const offset = this.camera.position;

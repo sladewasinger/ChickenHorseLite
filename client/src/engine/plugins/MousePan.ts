@@ -40,25 +40,15 @@ export class MousePan implements Plugin {
 
     onMouseMove() {
         if (this.renderer.camera.isPanning) {
-            // this.renderer.camera.position.x -= this.mouse.deltaX;
-            // this.renderer.camera.position.y -= this.mouse.deltaY;
             this.renderer.pan(this.mouse.deltaX, this.mouse.deltaY)
         }
-
-        const worldPos = this.renderer.screenToWorld(new Vector2D(this.mouse.x, this.mouse.y));
-        this.mouseRect.position = worldPos;
-        this.renderer.renderRectangle(this.mouseRect);
     }
 
     zoom(deltaY?: number): void {
         if (!deltaY)
             return;
 
-
-        console.log("ZOOM", deltaY > 0 ? "OUT" : "IN");
         const worldPos = this.renderer.screenToWorld(new Vector2D(this.mouse.x, this.mouse.y));
         this.renderer.zoomAroundPoint(deltaY, worldPos);
-        // this.renderer.camera.zoom += deltaY * -0.001;
-        // this.renderer.camera.zoom = Math.min(Math.max(0.125, this.renderer.camera.zoom), 4);
     }
 }
