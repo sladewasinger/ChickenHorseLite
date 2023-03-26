@@ -1,9 +1,5 @@
 import Matter from "matter-js";
-import { Mouse } from "./mouse";
 import { Plugin, PluginHandler } from "./pluginHandler";
-import { BoxCreator } from "./plugins/BoxCreator";
-import { MousePan } from "./plugins/MousePan";
-import { Renderer } from "./renderer";
 
 export class Engine {
     public static readonly VERSION = '0.0.1';

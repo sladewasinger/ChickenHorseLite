@@ -1,9 +1,9 @@
-import { Engine } from "../engine";
-import { Mouse } from "../mouse";
-import { Renderer } from "../renderer";
-import { Vector2D } from "../Vector2D";
-import { Plugin } from "../pluginHandler";
-import { Rectangle } from "../Rectangle";
+import { Engine } from "../engine/engine";
+import { Mouse } from "../renderer/mouse";
+import { Renderer } from "../renderer/renderer";
+import { Vector2D } from "../math/Vector2D";
+import { Plugin } from "../engine/pluginHandler";
+import { Rectangle } from "../models/Rectangle";
 
 export class MousePan implements Plugin {
     mouse: Mouse;

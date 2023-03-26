@@ -1,10 +1,10 @@
 import Matter from "matter-js";
-import { Engine } from "../engine";
-import { Mouse } from "../mouse";
-import { Plugin } from "../pluginHandler";
-import { Renderer } from "../renderer";
-import { Rectangle } from "../Rectangle";
-import { Vector2D } from "../Vector2D";
+import { Engine } from "../engine/engine";
+import { Mouse } from "../renderer/mouse";
+import { Plugin } from "../engine/pluginHandler";
+import { Renderer } from "../renderer/renderer";
+import { Rectangle } from "../models/Rectangle";
+import { Vector2D } from "../math/Vector2D";
 
 export class BoxCreator implements Plugin {
     box: Rectangle | null = null;

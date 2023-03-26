@@ -1,9 +1,9 @@
 import Matter from "matter-js";
 import { Camera } from "./camera";
-import { Engine } from "./engine";
+import { Engine } from "../engine/engine";
 import { Mouse } from "./mouse";
-import { Rectangle } from "./Rectangle";
-import { Vector2D } from "./Vector2D";
+import { Rectangle } from "../models/Rectangle";
+import { Vector2D } from "../math/Vector2D";
 
 export class Renderer {
     camera: Camera;

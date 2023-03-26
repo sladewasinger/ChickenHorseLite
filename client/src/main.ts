@@ -1,8 +1,8 @@
 import Matter from 'matter-js';
 import { Engine } from './engine/engine';
-import { BoxCreator } from './engine/plugins/BoxCreator';
-import { MousePan } from './engine/plugins/MousePan';
-import { Renderer } from './engine/renderer';
+import { BoxCreator } from './plugins/BoxCreator';
+import { MousePan } from './plugins/MousePan';
+import { Renderer } from './renderer/renderer';
 import './style.css'; // Provides global styles
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
