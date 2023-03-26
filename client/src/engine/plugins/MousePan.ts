@@ -3,11 +3,13 @@ import { Mouse } from "../mouse";
 import { Renderer } from "../renderer";
 import { Vector2D } from "../Vector2D";
 import { Plugin } from "../pluginHandler";
+import { Rectangle } from "../Rectangle";
 
 export class MousePan implements Plugin {
     mouse: Mouse;
     engine: Engine;
     renderer: Renderer;
+    mouseRect: Rectangle = new Rectangle(new Vector2D(0, 0), 10, 10, "green");
 
     constructor(canvas: HTMLCanvasElement, mouse: Mouse, engine: Engine, renderer: Renderer) {
         this.mouse = mouse;
@@ -17,7 +19,7 @@ export class MousePan implements Plugin {
         this.mouse.onMouse2Down.on(() => this.onMouseDown());
         this.mouse.onMouse2Up.on(() => this.onMouseUp());
         this.mouse.onMouseMove.on(() => this.onMouseMove());
-        this.mouse.onMouseWheel.on((e) => this.onMouseWheel(e));
+        this.mouse.onMouseWheel.on((e) => this.zoom(e));
     }
 
     run(): void {
@@ -38,12 +40,16 @@ export class MousePan implements Plugin {
 
     onMouseMove() {
         if (this.renderer.camera.isPanning) {
-            this.renderer.camera.position.x += this.mouse.deltaX;
-            this.renderer.camera.position.y += this.mouse.deltaY;
+            this.renderer.camera.position.x -= this.mouse.deltaX;
+            this.renderer.camera.position.y -= this.mouse.deltaY;
         }
+
+        const worldPos = this.renderer.camera.screenToWorld(new Vector2D(this.mouse.x, this.mouse.y));
+        this.mouseRect.position = worldPos;
+        this.renderer.renderRectangle(this.mouseRect);
     }
 
-    onMouseWheel(deltaY?: number): void {
+    zoom(deltaY?: number): void {
         if (!deltaY)
             return;
 

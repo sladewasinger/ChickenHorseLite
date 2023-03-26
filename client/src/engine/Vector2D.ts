@@ -9,16 +9,22 @@ export class Vector2D {
     }
 
     public add(v: Vector2D) {
-        this.x += v.x;
-        this.y += v.y;
-
-        return this;
+        const newV = new Vector2D(this.x + v.x, this.y + v.y);
+        return newV;
     }
 
     public subtract(v: Vector2D) {
-        this.x -= v.x;
-        this.y -= v.y;
+        const newV = new Vector2D(this.x - v.x, this.y - v.y);
+        return newV;
+    }
 
-        return this;
+    multiply(n: number) {
+        const newV = new Vector2D(this.x * n, this.y * n);
+        return newV;
+    }
+
+    lerp(pos: Vector2D, lerp: number) {
+        const newV = new Vector2D(this.x + (pos.x - this.x) * lerp, this.y + (pos.y - this.y) * lerp);
+        return newV;
     }
 }

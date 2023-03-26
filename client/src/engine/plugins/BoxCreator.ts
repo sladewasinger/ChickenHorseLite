@@ -25,8 +25,7 @@ export class BoxCreator implements Plugin {
 
     onMouseDown() {
         if (this.mouse.isButton1Down) {
-            const pos = new Vector2D(this.mouse.x / this.renderer.camera.zoom, this.mouse.y / this.renderer.camera.zoom)
-                .subtract(this.renderer.camera.position);
+            const pos = this.renderer.camera.screenToWorld(new Vector2D(this.mouse.x, this.mouse.y));
             this.box = new Rectangle(pos, 0, 0);
         }
     }
@@ -48,8 +47,7 @@ export class BoxCreator implements Plugin {
 
     onMouseMove(pos?: Vector2D) {
         if (this.box) {
-            const worldPos = new Vector2D(this.mouse.x / this.renderer.camera.zoom, this.mouse.y / this.renderer.camera.zoom)
-                .subtract(this.renderer.camera.position);
+            const worldPos = this.renderer.camera.screenToWorld(new Vector2D(this.mouse.x, this.mouse.y));
             const pos = new Vector2D(worldPos.x - this.box.position.x, worldPos.y - this.box.position.y);
 
             this.box.width = pos.x;
