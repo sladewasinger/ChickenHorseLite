@@ -1,13 +1,6 @@
 import { Vector2D } from "./Vector2D";
 
 export class Camera {
-    screenToWorld(pos: Vector2D) {
-        return new Vector2D(
-            (pos.x - this.width / 2) / this.zoom + this.position.x,
-            (pos.y - this.height / 2) / this.zoom + this.position.y
-        );
-    }
-
     position: Vector2D;
     zoom: number;
     isPanning: boolean;

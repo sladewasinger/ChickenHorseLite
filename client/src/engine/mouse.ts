@@ -3,7 +3,6 @@ import { Renderer } from "./renderer";
 import { Vector2D } from "./Vector2D";
 
 export class Mouse {
-    renderer: Renderer;
     canvas: HTMLCanvasElement;
     x: number;
     y: number;
@@ -21,9 +20,8 @@ export class Mouse {
     private readonly _onMouseMove = new LiteEvent<Vector2D>();
     private readonly _onMouseWheel = new LiteEvent<number>();
 
-    constructor(renderer: Renderer) {
-        this.renderer = renderer;
-        this.canvas = renderer.canvas;
+    constructor(canvas: HTMLCanvasElement) {
+        this.canvas = canvas;
         this.x = 0;
         this.y = 0;
         this.deltaX = 0;
@@ -39,13 +37,6 @@ export class Mouse {
         this.canvas.addEventListener('mousemove', (e) => this.onMouseMoveEvent(e));
         this.canvas.addEventListener("contextmenu", (event) => event.preventDefault());
         this.canvas.addEventListener("wheel", (event) => this.onMouseWheelEvent(event));
-    }
-
-    public get worldPosition() {
-        const pos = new Vector2D(this.x, this.y);
-        pos.x -= this.renderer.camera.position.x * this.renderer.camera.zoom;
-        pos.y -= this.renderer.camera.position.y * this.renderer.camera.zoom;
-        return pos;
     }
 
     public get onMouse1Down() {
