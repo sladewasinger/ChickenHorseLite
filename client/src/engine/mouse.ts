@@ -19,6 +19,7 @@ export class Mouse {
     private readonly _onMouse3Down = new LiteEvent<void>();
     private readonly _onMouse3Up = new LiteEvent<void>();
     private readonly _onMouseMove = new LiteEvent<Vector2D>();
+    private readonly _onMouseWheel = new LiteEvent<number>();
 
     constructor(renderer: Renderer) {
         this.renderer = renderer;
@@ -37,14 +38,7 @@ export class Mouse {
         this.canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
         this.canvas.addEventListener('mousemove', (e) => this.onMouseMoveEvent(e));
         this.canvas.addEventListener("contextmenu", (event) => event.preventDefault());
-        this.canvas.addEventListener("wheel", (event) => this.onMouseWheel(event));
-    }
-
-    private onMouseWheel(event: WheelEvent) {
-        event.preventDefault();
-        console.log("mouse wheel", event.deltaY)
-        this.renderer.camera.zoom += event.deltaY * -0.001;
-        this.renderer.camera.zoom = Math.min(Math.max(0.125, this.renderer.camera.zoom), 4);
+        this.canvas.addEventListener("wheel", (event) => this.onMouseWheelEvent(event));
     }
 
     public get worldPosition() {
@@ -80,6 +74,10 @@ export class Mouse {
 
     public get onMouseMove() {
         return this._onMouseMove.expose();
+    }
+
+    public get onMouseWheel() {
+        return this._onMouseWheel.expose();
     }
 
     private onMouseDown(e: MouseEvent) {
@@ -121,5 +119,10 @@ export class Mouse {
         this.deltaY = delta.y;
 
         this._onMouseMove.trigger(new Vector2D(this.x, this.y));
+    }
+
+    private onMouseWheelEvent(event: WheelEvent) {
+        event.preventDefault();
+        this._onMouseWheel.trigger(event.deltaY);
     }
 }

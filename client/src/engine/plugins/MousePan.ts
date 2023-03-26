@@ -17,6 +17,7 @@ export class MousePan implements Plugin {
         this.mouse.onMouse2Down.on(() => this.onMouseDown());
         this.mouse.onMouse2Up.on(() => this.onMouseUp());
         this.mouse.onMouseMove.on(() => this.onMouseMove());
+        this.mouse.onMouseWheel.on((e) => this.onMouseWheel(e));
     }
 
     run(): void {
@@ -35,10 +36,18 @@ export class MousePan implements Plugin {
         this.renderer.camera.isPanning = false;
     }
 
-    onMouseMove(pos?: Vector2D) {
+    onMouseMove() {
         if (this.renderer.camera.isPanning) {
             this.renderer.camera.position.x += this.mouse.deltaX;
             this.renderer.camera.position.y += this.mouse.deltaY;
         }
+    }
+
+    onMouseWheel(deltaY?: number): void {
+        if (!deltaY)
+            return;
+
+        this.renderer.camera.zoom += deltaY * -0.001;
+        this.renderer.camera.zoom = Math.min(Math.max(0.125, this.renderer.camera.zoom), 4);
     }
 }
