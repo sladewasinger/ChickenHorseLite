@@ -12,8 +12,6 @@ if (!canvas) {
 const renderer = new Renderer(canvas);
 
 const engine = new Engine();
-engine.addPlugin(new BoxCreator(engine, renderer));
-engine.addPlugin(new MousePan(engine, renderer));
 
 engine.start();
 renderer.start(engine);
