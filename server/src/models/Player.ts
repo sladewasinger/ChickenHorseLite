@@ -1,5 +1,5 @@
-import { Input } from "@/Input";
-import { Vector2D } from "shared/math/Vector2D";
+import { Input } from "@/Input.js";
+import { Vector2D } from "shared/math/Vector2D.js";
 
 
 export class Player {

@@ -1,8 +1,8 @@
 import Matter from "matter-js";
-import { Player } from "./models/Player";
-import { Input } from "./Input";
-import { SimpleBody } from "shared/SimpleBody";
-import { Level } from "./levels/Level";
+import { Player } from "./models/Player.js";
+import { Input } from "./Input.js";
+import { SimpleBody } from "shared/SimpleBody.js";
+import { Level } from "./levels/Level.js";
 
 export class Engine {
     public engine: Matter.Engine;
