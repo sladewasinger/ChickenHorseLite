@@ -4,7 +4,7 @@ import { Mouse } from "../renderer/mouse";
 import { Plugin } from "../engine/pluginHandler";
 import { Renderer } from "../renderer/renderer";
 import { Rectangle } from "../models/Rectangle";
-import { Vector2D } from "shared/math/Vector2D";
+import { Vector2D } from "../math/Vector2D";
 
 export class BoxCreator implements Plugin {
     box: Rectangle | null = null;

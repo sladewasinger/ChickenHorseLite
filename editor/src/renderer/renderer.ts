@@ -3,7 +3,7 @@ import { Camera } from "./camera";
 import { Engine } from "../engine/engine";
 import { Mouse } from "./mouse";
 import { Rectangle } from "../models/Rectangle";
-import { Vector2D } from "shared/math/Vector2D";
+import { Vector2D } from "../math/Vector2D";
 
 export class Renderer {
     camera: Camera;

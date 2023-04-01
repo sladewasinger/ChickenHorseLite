@@ -1,9 +1,8 @@
-import Matter from 'matter-js';
-import { Engine } from './engine/engine';
-import { BoxCreator } from './plugins/BoxCreator';
-import { MousePan } from './plugins/MousePan';
-import { Renderer } from './renderer/renderer';
 import './style.css'; // Provides global styles
+
+import { io, Socket } from "socket.io-client";
+import { Engine } from './engine/engine';
+import { Renderer } from './renderer/renderer';
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 if (!canvas) {
@@ -16,41 +15,52 @@ const engine = new Engine();
 engine.start();
 renderer.start(engine);
 
-// create ground
-const ground = Matter.Bodies.rectangle(
-    canvas.width / 2,
-    canvas.height - 25,
-    canvas.width,
-    50,
-    { isStatic: true }
-);
 
-// create left wall
-const leftWall = Matter.Bodies.rectangle(
-    0,
-    canvas.height / 2,
-    50,
-    canvas.height,
-    { isStatic: true }
-);
 
-// create right wall
-const rightWall = Matter.Bodies.rectangle(
-    canvas.width,
-    canvas.height / 2,
-    50,
-    canvas.height,
-    { isStatic: true }
-);
+class Client {
+    private socket: Socket | undefined;
 
-// add bodies to the world
-engine.addBodies([ground, leftWall, rightWall]);
+    constructor(private serverUrl: string) { }
 
-// add a ball to the world
-engine.addBodies([Matter.Bodies.circle(200, 200, 80, {
-    render: {
-        fillStyle: '#FF0000',
-        strokeStyle: 'black',
-        lineWidth: 1,
-    },
-})]);
+    public connect(): void {
+        this.socket = io(this.serverUrl);
+
+        this.socket.on("connect", () => {
+            console.log("Connected to server");
+
+            // Send data to server
+            this.socket!.emit("event", { data: "Hello from client" });
+        });
+
+        this.socket.on("event", (data: any) => {
+            console.log("Received data:", data);
+        });
+
+        this.socket.on("disconnect", () => {
+            console.log("Disconnected from server");
+        });
+
+        this.socket.on("bodies", (bodies: any) => {
+            console.log("Received bodies:", bodies);
+        });
+
+        this.socket.on("player", (player: any) => {
+            console.log("Received player:", player);
+        });
+    }
+
+    public sendEvent(event: string, data: any): void {
+        if (this.socket && this.socket.connected) {
+            this.socket.emit(event, data);
+        }
+    }
+
+    public disconnect(): void {
+        if (this.socket) {
+            this.socket.disconnect();
+        }
+    }
+}
+
+const client = new Client("http://localhost:3000");
+client.connect();

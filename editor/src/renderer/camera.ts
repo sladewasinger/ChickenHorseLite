@@ -1,4 +1,4 @@
-import { Vector2D } from "shared/math/Vector2D";
+import { Vector2D } from "../math/Vector2D";
 
 export class Camera {
     position: Vector2D;

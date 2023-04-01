@@ -1,7 +1,7 @@
 import { Engine } from "../engine/engine";
 import { Mouse } from "../renderer/mouse";
 import { Renderer } from "../renderer/renderer";
-import { Vector2D } from "shared/math/Vector2D";
+import { Vector2D } from "../math/Vector2D";
 import { Plugin } from "../engine/pluginHandler";
 import { Rectangle } from "../models/Rectangle";
 

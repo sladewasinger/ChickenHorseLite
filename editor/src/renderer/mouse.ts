@@ -1,5 +1,5 @@
 import { LiteEvent } from "../LiteEvent/LiteEvent";
-import { Vector2D } from "shared/math/Vector2D";
+import { Vector2D } from "../math/Vector2D";
 
 export class Mouse {
     canvas: HTMLCanvasElement;
