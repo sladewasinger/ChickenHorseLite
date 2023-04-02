@@ -31,8 +31,9 @@ jobs:
           npm ci
           npm run build
           mkdir output
-          cp -r ./build ../output
-          cp -r ./node_modules ../output
+          mv ./build ./output
+          mv ./node_modules ./output
+          dir ./output
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
