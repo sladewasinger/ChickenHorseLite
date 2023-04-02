@@ -1,6 +1,6 @@
 import Matter from "matter-js";
 import { Player } from "./models/Player.js";
-import { Input } from "./Input.js";
+import { Input } from "../../shared/Input.js";
 import { SimpleBody } from "shared/SimpleBody.js";
 import { Level, ShapeFactory } from "./levels/Level.js";
 import { Server as SocketIOServer, Socket } from "socket.io";
@@ -34,8 +34,11 @@ export class Engine {
 
         Matter.Engine.update(this.engine, gameDelta);
 
+        for (const player of this.players) {
+            this.handleInput(player.id, player.input);
+        }
+
         if (clientDelta > 1000 / this.clientUpdateFps) {
-            console.log('sending gamestate');
             const clientPlayers: ClientPlayer[] = [];
             for (const player of this.players) {
                 const pBody = this.engine.world.bodies.find((body) => body.id === player.bodyId);
@@ -121,6 +124,7 @@ export class Engine {
             simpleBodies.push(simpleBody);
         }
         this.io.to(newPlayer.id).emit("bodies", simpleBodies);
+        this.io.to(newPlayer.id).emit("myPlayer", newPlayer.id, newPlayer.bodyId);
     }
 
     public removePlayer(id: string): void {
@@ -148,17 +152,17 @@ export class Engine {
             return;
         }
 
-        if (input.up) {
-            Matter.Body.applyForce(body, body.position, { x: 0, y: -0.01 });
+        if (input['w']) {
+            Matter.Body.setVelocity(body, { x: 0, y: -5 });
         }
-        if (input.down) {
-            Matter.Body.applyForce(body, body.position, { x: 0, y: 0.01 });
+        if (input['s']) {
+            Matter.Body.setVelocity(body, { x: 0, y: 5 });
         }
-        if (input.left) {
-            Matter.Body.applyForce(body, body.position, { x: -0.01, y: 0 });
+        if (input['a']) {
+            Matter.Body.setVelocity(body, { x: -5, y: 0 });
         }
-        if (input.right) {
-            Matter.Body.applyForce(body, body.position, { x: 0.01, y: 0 });
+        if (input['d']) {
+            Matter.Body.setVelocity(body, { x: 5, y: 0 });
         }
     }
 }

@@ -1,5 +1,5 @@
 import { ClientPlayer } from "shared/ClientPlayer";
-import { Input } from "@/Input.js";
+import { Input } from "shared/Input.js";
 import { Vector2D } from "shared/math/Vector2D.js";
 import { SimpleBody } from "@/../../shared/SimpleBody";
 
@@ -9,7 +9,7 @@ export class Player {
     public name: string;
     public position: Vector2D;
     public bodyId: number | undefined;
-    public inputs: Input = new Input();
+    public input: Input = new Input();
 
     constructor(id: string, name: string) {
         this.id = id;

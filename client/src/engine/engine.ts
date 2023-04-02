@@ -1,6 +1,7 @@
 import Matter from "matter-js";
 import { Plugin, PluginHandler } from "./pluginHandler";
 import { SimpleBody } from "shared/SimpleBody";
+import { Input } from 'shared/Input';
 
 export class Engine {
     public static readonly VERSION = '0.0.1';
@@ -8,6 +9,9 @@ export class Engine {
     fps: number = 60;
     matterEngine: Matter.Engine;
     lastUpdated: number = 0;
+    myPlayerId: string | undefined;
+    myPlayerBodyId: number | undefined;
+    input: Input = new Input();
 
     constructor() {
         console.log(`Engine version ${Engine.VERSION} started`);
@@ -70,9 +74,30 @@ export class Engine {
         const now = Date.now();
         const delta = now - this.lastUpdated;
 
+        this.handleInput();
         Matter.Engine.update(this.matterEngine, delta);
         this.pluginHandler.runPlugins();
 
         this.lastUpdated = Date.now();
+    }
+
+    handleInput() {
+        const body = this.matterEngine.world.bodies.find(body => body.id === this.myPlayerBodyId);
+        if (!body) {
+            return;
+        }
+
+        if (this.input['w']) {
+            Matter.Body.setVelocity(body, { x: body.velocity.x, y: -5 });
+        }
+        if (this.input['s']) {
+            Matter.Body.setVelocity(body, { x: body.velocity.x, y: 5 });
+        }
+        if (this.input['a']) {
+            Matter.Body.setVelocity(body, { x: -5, y: body.velocity.y });
+        }
+        if (this.input['d']) {
+            Matter.Body.setVelocity(body, { x: 5, y: body.velocity.y });
+        }
     }
 }

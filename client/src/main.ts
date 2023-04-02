@@ -34,6 +34,14 @@ class Client {
         });
         this.loadingIcon = new LoadingIcon();
         this.loadingIcon.show();
+
+        window.addEventListener('keydown', (e) => {
+            this.handleKeyDown(e);
+        });
+
+        window.addEventListener('keyup', (e) => {
+            this.handleKeyUp(e);
+        });
     }
 
     public connect(): void {
@@ -111,6 +119,12 @@ class Client {
             }
         });
 
+        this.socket.on('myPlayer', (id: string, bodyId: number) => {
+            console.log("Received my player id:", id, bodyId);
+            this.engine.myPlayerId = id;
+            this.engine.myPlayerBodyId = bodyId;
+        });
+
         this.engine.start();
         this.renderer.start(this.engine);
     }
@@ -125,6 +139,21 @@ class Client {
         if (this.socket) {
             this.socket.disconnect();
         }
+    }
+
+    private handleKeyDown(e: KeyboardEvent): void {
+        const body = this.engine.matterEngine.world.bodies.find(b => b.id === this.engine.myPlayerBodyId);
+        if (!body) {
+            return;
+        }
+
+        this.sendEvent('keydown', e.key);
+        this.engine.input[e.key] = true;
+    }
+
+    private handleKeyUp(e: KeyboardEvent): void {
+        this.sendEvent('keyup', e.key);
+        this.engine.input[e.key] = false;
     }
 }
 

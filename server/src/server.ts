@@ -71,7 +71,7 @@ class App {
                     return;
                 }
 
-                player.inputs[key] = true;
+                player.input[key] = true;
             });
 
             socket.on("keyup", (key: string) => {
@@ -84,7 +84,7 @@ class App {
                     return;
                 }
 
-                player.inputs[key] = false;
+                player.input[key] = false;
             });
         });
     }
