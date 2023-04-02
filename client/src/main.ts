@@ -6,7 +6,9 @@ import { Renderer } from './renderer/renderer';
 import { LoadingIcon } from './loading-icon/LoadingIcon';
 import { NameForm } from './NameForm';
 import { SimpleBody } from 'shared/SimpleBody';
+import { GameState } from 'shared/GameState';
 import Matter from 'matter-js';
+import { MousePan } from './plugins/MousePan';
 
 class Client {
     private socket: Socket | undefined;
@@ -22,8 +24,11 @@ class Client {
         if (!this.canvas) {
             throw new Error('Canvas not found');
         }
+
         this.engine = new Engine();
         this.renderer = new Renderer(this.canvas);
+        this.engine.addPlugin(new MousePan(this.engine, this.renderer));
+
         this.nameForm = new NameForm((value) => {
             this.sendEvent('registerPlayer', value);
         });
@@ -53,30 +58,57 @@ class Client {
             this.loadingIcon.show();
         });
 
-        this.socket.on("bodies", (bodies: SimpleBody[]) => {
-            console.log("Received bodies:", bodies);
-
-            for (const body of bodies) {
-                const b = Matter.Bodies.fromVertices(body.position.x, body.position.y, body.vertexSets, {
-                    label: "body",
-                    isStatic: body.isStatic
-                });
-                this.engine.addBodies([b]);
+        this.socket.on('gameState', (gameState: GameState) => {
+            console.log("Received game state:", gameState);
+            for (const body of gameState.dynamicBodies) {
+                let b = this.engine.matterEngine.world.bodies.find(b => b.id === body.id);
+                if (!b) {
+                    const b = this.engine.createBodyFromSimpleBody(body);
+                    this.engine.addBody(b);
+                } else {
+                    Matter.Body.setPosition(b, body.position);
+                    Matter.Body.setAngle(b, body.angle);
+                    Matter.Body.setVelocity(b, body.velocity);
+                    Matter.Body.setAngularVelocity(b, body.angularVelocity);
+                }
             }
+
+            for (const player of gameState.players) {
+                const body = this.engine.matterEngine.world.bodies.find(b => b.id === player.body.id);
+                if (!body) {
+                    const body = this.engine.createBodyFromSimpleBody(player.body);
+                    body.label = "player";
+                    this.engine.addBody(body);
+                } else {
+                    Matter.Body.setPosition(body, player.body.position);
+                    Matter.Body.setAngle(body, player.body.angle);
+                    Matter.Body.setVelocity(body, player.body.velocity);
+                    Matter.Body.setAngularVelocity(body, player.body.angularVelocity);
+                }
+            };
         });
 
-        this.socket.on("player", (player: any, playerSimpleBody: SimpleBody) => {
-            console.log("Received player:", player,);
+        this.socket.on("bodies", (simpleBodies: SimpleBody[]) => {
+            console.log("Received bodies:", simpleBodies);
 
-            const playerBody = this.engine.matterEngine.world.bodies.find(b => b.id === player.bodyId);
-            if (!playerBody) {
-                const body = Matter.Bodies.fromVertices(playerSimpleBody.position.x, playerSimpleBody.position.y, playerSimpleBody.vertexSets, {
-                    label: "player",
-                    id: player.bodyId,
-                });
+            for (const simpleBody of simpleBodies) {
+                const body = this.engine.createBodyFromSimpleBody(simpleBody);
                 this.engine.addBodies([body]);
             }
         });
+
+        // this.socket.on("player", (player: any, playerSimpleBody: SimpleBody) => {
+        //     console.log("Received player:", player,);
+
+        //     const playerBody = this.engine.matterEngine.world.bodies.find(b => b.id === player.bodyId);
+        //     if (!playerBody) {
+        //         const body = Matter.Bodies.fromVertices(playerSimpleBody.position.x, playerSimpleBody.position.y, playerSimpleBody.vertexSets, {
+        //             label: "player",
+        //             id: player.bodyId,
+        //         });
+        //         this.engine.addBodies([body]);
+        //     }
+        // });
 
         this.engine.start();
         this.renderer.start(this.engine);

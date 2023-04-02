@@ -1,5 +1,7 @@
 import { Vector2D } from "./math/Vector2D";
 
+export type SimpleBodyType = "circle" | "rectangle";
+
 export class SimpleBody {
     public id: number;
     public position: Vector2D;
@@ -7,7 +9,11 @@ export class SimpleBody {
     public angle: number;
     public angularVelocity: number;
     public isStatic: boolean = false;
-    public vertexSets: Matter.Vector[][];
+    public type: SimpleBodyType;
+    public radius: number | undefined;
+    public width: number | undefined;
+    public height: number | undefined;
+    public label: string | undefined;
 
     constructor(
         id: number,
@@ -15,7 +21,7 @@ export class SimpleBody {
         velocity: Vector2D,
         angle: number,
         angularVelocity: number,
-        vertexSets: Matter.Vector[][],
+        type: SimpleBodyType,
         isStatic: boolean = false
     ) {
         this.id = id;
@@ -23,7 +29,7 @@ export class SimpleBody {
         this.velocity = velocity;
         this.angle = angle;
         this.angularVelocity = angularVelocity;
+        this.type = type;
         this.isStatic = isStatic;
-        this.vertexSets = vertexSets;
     }
 }

@@ -1,7 +1,4 @@
-import { Engine } from "../Engine";
-import Matter from "matter-js";
-import { Level } from "./Level";
-
+import { Level, ShapeFactory } from "./Level.js";
 
 export class Level1 implements Level {
     name: string = "Level 1";
@@ -10,30 +7,30 @@ export class Level1 implements Level {
         const height = 800;
 
         // create ground
-        const ground = Matter.Bodies.rectangle(
+        const ground = ShapeFactory.createRectangle(
             width / 2,
             height - 25,
             width,
             50,
-            { isStatic: true }
+            true
         );
 
         // create left wall
-        const leftWall = Matter.Bodies.rectangle(
+        const leftWall = ShapeFactory.createRectangle(
             0,
             height / 2,
             50,
             height,
-            { isStatic: true }
+            true
         );
 
         // create right wall
-        const rightWall = Matter.Bodies.rectangle(
+        const rightWall = ShapeFactory.createRectangle(
             width,
             height / 2,
             50,
             height,
-            { isStatic: true }
+            true
         );
 
         return [ground, leftWall, rightWall];

@@ -1,5 +1,7 @@
+import { ClientPlayer } from "shared/ClientPlayer";
 import { Input } from "@/Input.js";
 import { Vector2D } from "shared/math/Vector2D.js";
+import { SimpleBody } from "@/../../shared/SimpleBody";
 
 
 export class Player {
