@@ -26,7 +26,7 @@ class App {
         this.configure();
         this.bindEvents();
 
-        this.engine = new Engine(this.sendBodiesUpdate.bind(this), this.sendPlayerUpdate.bind(this));
+        this.engine = new Engine(this.io);
     }
 
     private configure(): void {

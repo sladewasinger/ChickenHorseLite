@@ -65,13 +65,17 @@ class Client {
             }
         });
 
-        this.socket.on("player", (player: any, playerBody: SimpleBody) => {
+        this.socket.on("player", (player: any, playerSimpleBody: SimpleBody) => {
             console.log("Received player:", player,);
 
-            const body = Matter.Bodies.fromVertices(playerBody.position.x, playerBody.position.y, playerBody.vertexSets, {
-                label: "player",
-            });
-            this.engine.addBodies([body]);
+            const playerBody = this.engine.matterEngine.world.bodies.find(b => b.id === player.bodyId);
+            if (!playerBody) {
+                const body = Matter.Bodies.fromVertices(playerSimpleBody.position.x, playerSimpleBody.position.y, playerSimpleBody.vertexSets, {
+                    label: "player",
+                    id: player.bodyId,
+                });
+                this.engine.addBodies([body]);
+            }
         });
 
         this.engine.start();

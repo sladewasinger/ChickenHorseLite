@@ -6,8 +6,8 @@ import { Level } from "./Level";
 export class Level1 implements Level {
     name: string = "Level 1";
     getBodies() {
-        const width = 1920;
-        const height = 1080;
+        const width = 1500;
+        const height = 800;
 
         // create ground
         const ground = Matter.Bodies.rectangle(

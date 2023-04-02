@@ -3,6 +3,7 @@ import { Player } from "./models/Player.js";
 import { Input } from "./Input.js";
 import { SimpleBody } from "shared/SimpleBody.js";
 import { Level } from "./levels/Level.js";
+import { Server as SocketIOServer, Socket } from "socket.io";
 
 export class Engine {
     public engine: Matter.Engine;
@@ -10,8 +11,7 @@ export class Engine {
     private players: Player[] = [];
 
     constructor(
-        private sendBodiesUpdate: (id: string, bodies: SimpleBody[]) => void,
-        private sendPlayerUpdate: (id: string, player: Player, playerBody: SimpleBody) => void,
+        private io: SocketIOServer,
     ) {
         this.engine = Matter.Engine.create();
     }
@@ -51,24 +51,31 @@ export class Engine {
     }
 
     public addPlayer(id: string, name: string): void {
-        const player = new Player(id, name);
-        this.players.push(player);
+        const newPlayer = new Player(id, name);
+        this.players.push(newPlayer);
 
         const playerBody = Matter.Bodies.circle(200, 0, 50, {
             label: "player",
             restitution: 0.5,
         });
-        player.bodyId = playerBody.id;
+        newPlayer.bodyId = playerBody.id;
         Matter.World.add(this.engine.world, playerBody);
 
-        this.sendPlayerUpdate(player.id, player, <SimpleBody>{
-            id: playerBody.id,
-            position: { x: playerBody.position.x, y: playerBody.position.y },
-            velocity: { x: playerBody.velocity.x, y: playerBody.velocity.y },
-            angle: playerBody.angle,
-            angularVelocity: playerBody.angularVelocity,
-            vertexSets: [playerBody.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y }))],
-        });
+        for (const player of this.players) {
+            const pBody = this.engine.world.bodies.find((body) => body.id === player.bodyId);
+            if (!pBody) {
+                continue;
+            }
+            this.io.emit("player", player, <SimpleBody>{
+                id: pBody.id,
+                position: { x: pBody.position.x, y: pBody.position.y },
+                velocity: { x: pBody.velocity.x, y: pBody.velocity.y },
+                angle: pBody.angle,
+                angularVelocity: pBody.angularVelocity,
+                vertexSets: [pBody.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y }))],
+                isStatic: pBody.isStatic,
+            });
+        }
 
         const bodies = this.engine.world.bodies;
         const simpleBodies: SimpleBody[] = [];
@@ -89,7 +96,7 @@ export class Engine {
 
             simpleBodies.push(simpleBody);
         }
-        this.sendBodiesUpdate(player.id, simpleBodies);
+        this.io.to(newPlayer.id).emit("bodies", simpleBodies);
     }
 
     public removePlayer(id: string): void {
