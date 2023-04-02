@@ -54,6 +54,7 @@ class App {
 
             socket.on("disconnect", () => {
                 console.log("Client disconnected");
+                this.engine.removePlayer(socket.id);
             });
 
             socket.on("registerPlayer", (name: string) => {

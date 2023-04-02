@@ -101,6 +101,16 @@ class Client {
             }
         });
 
+        this.socket.on("removeBodies", (ids: number[]) => {
+            console.log("Received remove bodies:", ids);
+            for (const id of ids) {
+                const body = this.engine.matterEngine.world.bodies.find(b => b.id === id);
+                if (body) {
+                    Matter.World.remove(this.engine.matterEngine.world, body, true);
+                }
+            }
+        });
+
         this.engine.start();
         this.renderer.start(this.engine);
     }

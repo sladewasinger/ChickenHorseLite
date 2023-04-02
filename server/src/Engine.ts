@@ -124,7 +124,13 @@ export class Engine {
     }
 
     public removePlayer(id: string): void {
+        const player = this.getPlayer(id);
+        if (!player) {
+            return;
+        }
+
         this.players = this.players.filter((player) => player.id !== id);
+        this.io.emit("removeBodies", [player.bodyId]);
     }
 
     public handleInput(id: string, input: Input): void {
