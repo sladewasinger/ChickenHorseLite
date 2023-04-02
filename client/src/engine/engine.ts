@@ -70,8 +70,6 @@ export class Engine {
         const now = Date.now();
         const delta = now - this.lastUpdated;
 
-        // update matter js engine
-        // Matter.Engine.update(engine);
         Matter.Engine.update(this.matterEngine, delta);
         this.pluginHandler.runPlugins();
 

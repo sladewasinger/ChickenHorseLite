@@ -92,23 +92,14 @@ class Client {
             console.log("Received bodies:", simpleBodies);
 
             for (const simpleBody of simpleBodies) {
+                const b = this.engine.matterEngine.world.bodies.find(b => b.id === simpleBody.id);
+                if (b) {
+                    continue;
+                }
                 const body = this.engine.createBodyFromSimpleBody(simpleBody);
                 this.engine.addBodies([body]);
             }
         });
-
-        // this.socket.on("player", (player: any, playerSimpleBody: SimpleBody) => {
-        //     console.log("Received player:", player,);
-
-        //     const playerBody = this.engine.matterEngine.world.bodies.find(b => b.id === player.bodyId);
-        //     if (!playerBody) {
-        //         const body = Matter.Bodies.fromVertices(playerSimpleBody.position.x, playerSimpleBody.position.y, playerSimpleBody.vertexSets, {
-        //             label: "player",
-        //             id: player.bodyId,
-        //         });
-        //         this.engine.addBodies([body]);
-        //     }
-        // });
 
         this.engine.start();
         this.renderer.start(this.engine);
