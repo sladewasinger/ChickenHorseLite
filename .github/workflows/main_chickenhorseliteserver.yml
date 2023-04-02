@@ -29,12 +29,15 @@ jobs:
           cd server
           npm ci
           npm run build
+          mkdir output
+          cp -r ./build ../output
+          cp -r ./node_modules ../output
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
         with:
           name: node-app
-          path: ./server
+          path: ./server/output
 
   deploy:
     runs-on: ubuntu-latest
