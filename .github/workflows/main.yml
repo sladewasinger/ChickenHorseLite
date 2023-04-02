@@ -52,5 +52,5 @@ jobs:
         with:
           app-name: 'chickenhorselite'
           slot-name: 'production'
-          publish-profile: ${{ secrets.PUBLISH_PROFILE }}
+          publish-profile: ${{ secrets.SERVER_PUBLISH_PROFILE }}
           package: .
