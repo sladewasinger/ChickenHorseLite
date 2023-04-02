@@ -116,10 +116,7 @@ class App {
 }
 
 const env = process.env.NODE_ENV || "development";
-let port = 3000;
-if (env !== "local" && env !== "development") {
-    port = 8080;
-}
+const port = +(process.env.PORT || 3000);
 const app = new App();
 app.start(port);
 app.loadLevel(new Level1());
