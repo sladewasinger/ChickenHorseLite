@@ -19,7 +19,10 @@ class App {
         this.server = createServer(this.app);
         this.io = new SocketIOServer(this.server, {
             cors: {
-                origin: "http://localhost:3010",
+                origin: [
+                    "http://localhost:3010",
+                    "https://chickenhorseliteserver.azurewebsites.net:*"
+                ],
                 methods: ["GET", "POST"],
             },
         });
@@ -31,7 +34,7 @@ class App {
 
     private configure(): void {
         // Configure express middleware, routes, etc.
-        this.app.use(cors({ origin: 'http://localhost:3010', methods: ['GET', 'POST'] }));
+        //this.app.use(cors({ origin: 'http://localhost:3010', methods: ['GET', 'POST'] }));
     }
 
     public start(port: number): void {

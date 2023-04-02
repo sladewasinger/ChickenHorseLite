@@ -158,5 +158,13 @@ class Client {
     }
 }
 
-const client = new Client("http://localhost:3000");
+// check node environment for local development
+
+let env = import.meta.env.MODE;
+let url = "http://localhost:3000";
+if (env != "local" && env != "development") {
+    url = "https://chickenhorseliteserver.azurewebsites.net:3000";
+}
+console.log("Environment:", env, "URL:", url);
+const client = new Client(url);
 client.connect();
