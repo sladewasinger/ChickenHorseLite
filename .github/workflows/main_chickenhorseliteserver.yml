@@ -23,8 +23,11 @@ jobs:
 
       - name: npm install, build, and test
         run: |
+          echo "cd server"
           cd server
+          echo "npm ci --production"
           npm ci --production
+          echo "npm run build"
           npm run build
 
       - name: Upload artifact for deployment job
