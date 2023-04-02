@@ -1,7 +1,8 @@
 {
   "scripts": {
     "start": "rm -rf build && tsc && tsc-alias && node build/server/src/server.js",
-    "dev": "tsc -w"
+    "dev": "tsc -w",
+    "build": "rm -rf build && tsc && tsc-alias"
   },
   "type": "module",
   "devDependencies": {
