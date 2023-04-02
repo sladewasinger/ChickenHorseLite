@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'client/**'
+      - '.github/workflows/main_chickenhorselite_client.yml'
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:

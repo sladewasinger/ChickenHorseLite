@@ -9,6 +9,7 @@ on:
       - main
     paths:
       - 'server/**'
+      - '.github/workflows/main_chickenhorseliteserver.yml'
   workflow_dispatch:
 
 jobs:
