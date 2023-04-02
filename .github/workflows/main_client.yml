@@ -23,7 +23,7 @@ jobs:
 
       - name: npm install, build, and test
         run: |
-          cd server
+          cd client
           npm install
           npm run build
 
@@ -31,7 +31,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: node-app
-          path: ./server/build
+          path: ./client/dist
 
   deploy:
     runs-on: ubuntu-latest
@@ -52,5 +52,5 @@ jobs:
         with:
           app-name: 'chickenhorselite'
           slot-name: 'production'
-          publish-profile: ${{ secrets.SERVER_PUBLISH_PROFILE }}
+          publish-profile: ${{ secrets.CLIENT_PUBLISH_PROFILE }}
           package: .
