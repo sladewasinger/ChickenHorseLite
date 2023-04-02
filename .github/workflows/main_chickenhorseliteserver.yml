@@ -21,17 +21,14 @@ jobs:
         with:
           node-version: '18.x'
 
-      - name: npm install, build, and test
-        run: |
-          cd server
-          npm install
-          npm run build
+      # - name: npm install, build, and test
+      #   run: |
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
         with:
           name: node-app
-          path: ./server/build
+          path: ./server
 
   deploy:
     runs-on: ubuntu-latest
