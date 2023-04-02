@@ -23,11 +23,9 @@ jobs:
 
       - name: npm install, build, and test
         run: |
-          echo "cd server"
+          set -x
           cd server
-          echo "npm ci --production"
-          npm ci --production
-          echo "npm run build"
+          npm ci
           npm run build
 
       - name: Upload artifact for deployment job
