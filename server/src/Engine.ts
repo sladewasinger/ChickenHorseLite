@@ -130,6 +130,10 @@ export class Engine {
         }
 
         this.players = this.players.filter((player) => player.id !== id);
+        const body = this.engine.world.bodies.find((body) => body.id === player.bodyId);
+        if (body) {
+            Matter.World.remove(this.engine.world, body);
+        }
         this.io.emit("removeBodies", [player.bodyId]);
     }
 
