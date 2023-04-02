@@ -9,6 +9,7 @@ import { SimpleBody } from 'shared/SimpleBody';
 import { GameState } from 'shared/GameState';
 import Matter from 'matter-js';
 import { MousePan } from './plugins/MousePan';
+import { ClientPlayer } from 'shared/ClientPlayer';
 
 class Client {
     private socket: Socket | undefined;
@@ -25,8 +26,8 @@ class Client {
             throw new Error('Canvas not found');
         }
 
-        this.engine = new Engine();
         this.renderer = new Renderer(this.canvas);
+        this.engine = new Engine(this.renderer);
         this.engine.addPlugin(new MousePan(this.engine, this.renderer));
 
         this.nameForm = new NameForm((value) => {
@@ -67,7 +68,6 @@ class Client {
         });
 
         this.socket.on('gameState', (gameState: GameState) => {
-            console.log("Received game state:", gameState);
             for (const body of gameState.dynamicBodies) {
                 let b = this.engine.matterEngine.world.bodies.find(b => b.id === body.id);
                 if (!b) {
@@ -81,6 +81,7 @@ class Client {
                 }
             }
 
+            this.engine.gameState = gameState;
             for (const player of gameState.players) {
                 const body = this.engine.matterEngine.world.bodies.find(b => b.id === player.body.id);
                 if (!body) {

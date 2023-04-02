@@ -40,7 +40,7 @@ export class MousePan implements Plugin {
 
     onMouseMove() {
         if (this.renderer.camera.isPanning) {
-            this.renderer.pan(this.mouse.deltaX, this.mouse.deltaY)
+            this.renderer.translate(this.mouse.deltaX, this.mouse.deltaY)
         }
     }
 

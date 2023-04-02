@@ -10,6 +10,8 @@ export class Player {
     public position: Vector2D;
     public bodyId: number | undefined;
     public input: Input = new Input();
+    public jumpDebounce: boolean = false;
+    public grounded: boolean = true;
 
     constructor(id: string, name: string) {
         this.id = id;

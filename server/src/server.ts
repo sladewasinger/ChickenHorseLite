@@ -90,7 +90,7 @@ class App {
     }
 
     private validateKey(key: string) {
-        const validKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d", "space"];
+        const validKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d", " "];
 
         if (!validKeys.includes(key)) {
             return false;

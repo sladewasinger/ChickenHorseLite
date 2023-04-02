@@ -8,6 +8,10 @@ export class Vector2D {
         this.y = y;
     }
 
+    public clone() {
+        return new Vector2D(this.x, this.y);
+    }
+
     public add(v: Vector2D) {
         const newV = new Vector2D(this.x + v.x, this.y + v.y);
         return newV;
