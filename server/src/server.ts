@@ -26,7 +26,7 @@ class App {
         this.configure();
         this.bindEvents();
 
-        this.engine = new Engine(this.sendBodiesUpdate, this.sendPlayerUpdate);
+        this.engine = new Engine(this.sendBodiesUpdate.bind(this), this.sendPlayerUpdate.bind(this));
     }
 
     private configure(): void {
@@ -54,6 +54,10 @@ class App {
 
             socket.on("disconnect", () => {
                 console.log("Client disconnected");
+            });
+
+            socket.on("registerPlayer", (name: string) => {
+                this.engine.addPlayer(socket.id, name);
             });
 
             socket.on("keydown", (key: string) => {
@@ -98,8 +102,8 @@ class App {
         this.io.to(id).emit("bodies", bodies);
     }
 
-    public sendPlayerUpdate(id: string, player: Player) {
-        this.io.to(id).emit("player", player);
+    public sendPlayerUpdate(id: string, player: Player, playerBody: SimpleBody) {
+        this.io.to(id).emit("player", player, playerBody);
     }
 
     public loadLevel(level: Level) {

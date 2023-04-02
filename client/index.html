@@ -10,6 +10,21 @@
 
 <body>
   <canvas id="canvas"></canvas>
+  <div class="center-container">
+    <div id="loading-icon">
+      <div class="lds-ellipsis">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+    </div>
+    <form id="name-form">
+      <div><label for="name">Enter your name:</label></div>
+      <input type="text" id="name" name="name" />
+      <input type="submit" value="Submit" />
+    </form>
+  </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 

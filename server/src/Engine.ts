@@ -10,8 +10,8 @@ export class Engine {
     private players: Player[] = [];
 
     constructor(
-        public sendBodiesUpdate: (id: string, bodies: SimpleBody[]) => void,
-        public sendPlayerUpdate: (id: string, player: Player) => void,
+        private sendBodiesUpdate: (id: string, bodies: SimpleBody[]) => void,
+        private sendPlayerUpdate: (id: string, player: Player, playerBody: SimpleBody) => void,
     ) {
         this.engine = Matter.Engine.create();
     }
@@ -35,6 +35,7 @@ export class Engine {
                 position: { x: body.position.x, y: body.position.y },
                 velocity: { x: body.velocity.x, y: body.velocity.y },
                 angle: body.angle,
+                vertexSets: [body.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y }))],
                 angularVelocity: body.angularVelocity,
             };
         });
@@ -49,18 +50,25 @@ export class Engine {
         return this.players.find((player) => player.id === id);
     }
 
-    public addPlayer(name: string, id: string): void {
+    public addPlayer(id: string, name: string): void {
         const player = new Player(id, name);
         this.players.push(player);
 
-        const playerBody = Matter.Bodies.circle(0, 0, 50, {
+        const playerBody = Matter.Bodies.circle(200, 0, 50, {
             label: "player",
             restitution: 0.5,
         });
         player.bodyId = playerBody.id;
         Matter.World.add(this.engine.world, playerBody);
 
-        this.sendPlayerUpdate(player.id, player);
+        this.sendPlayerUpdate(player.id, player, <SimpleBody>{
+            id: playerBody.id,
+            position: { x: playerBody.position.x, y: playerBody.position.y },
+            velocity: { x: playerBody.velocity.x, y: playerBody.velocity.y },
+            angle: playerBody.angle,
+            angularVelocity: playerBody.angularVelocity,
+            vertexSets: [playerBody.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y }))],
+        });
 
         const bodies = this.engine.world.bodies;
         const simpleBodies: SimpleBody[] = [];
@@ -75,6 +83,7 @@ export class Engine {
                 velocity: { x: body.velocity.x, y: body.velocity.y },
                 angle: body.angle,
                 angularVelocity: body.angularVelocity,
+                vertexSets: [body.vertices.map((vertex) => ({ x: vertex.x, y: vertex.y }))],
                 isStatic: body.isStatic,
             };
 
