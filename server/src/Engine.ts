@@ -34,6 +34,7 @@ export class Engine {
         const clientDelta = now - this.lastClientUpdate;
 
         for (const player of this.players) {
+            this.handleFallThroughFloor(player);
             this.handleLandingCheck(player);
             this.handleInput(player.id, player.input);
         }
@@ -69,6 +70,16 @@ export class Engine {
         setTimeout(() => {
             this.update();
         }, 1000 / this.fps);
+    }
+
+    handleFallThroughFloor(player: Player) {
+        const body = this.engine.world.bodies.find((body) => body.id === player.bodyId);
+        if (!body) {
+            return;
+        }
+        if (body.position.y > 3000) {
+            Matter.Body.setPosition(body, { x: 200, y: 0 });
+        }
     }
 
     public getSimpleBodyFromBody(body: Matter.Body): SimpleBody {

@@ -94,7 +94,7 @@ class Client {
 
 
 
-                    if (Vector2D.subtract(player.body.position, bodyPosition2D).length() > 75) {
+                    if (Vector2D.subtract(player.body.position, bodyPosition2D).length() > 500) {
                         Matter.Body.setPosition(body, player.body.position);
                         console.log("Teleporting player", player.id);
                     } else {
