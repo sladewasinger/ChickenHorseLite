@@ -14,7 +14,7 @@ export class Engine {
     public lastClientUpdate: number = 0;
     public fps: number = 60;
     public frameNumber: number = 0;
-    public clientUpdateFps: number = 30;
+    public clientUpdateFps: number = 20;
     private players: Player[] = [];
 
     constructor(

@@ -155,7 +155,7 @@ export class Engine {
         // ray cast down and see if we hit the ground
         const validIds = this.matterEngine.world.bodies.map((body) => body.id);
         const rayCollisions = Matter.Query
-            .ray(this.matterEngine.world.bodies, body.position, { x: body.position.x, y: body.position.y + 26 });
+            .ray(this.matterEngine.world.bodies, body.position, { x: body.position.x, y: body.position.y + 25 });
         const filteredCollisions = rayCollisions
             .filter((collision) => (<any>collision).body.label !== "player")
             .filter((collision) => validIds.includes(collision.bodyA.id) && validIds.includes(collision.bodyB.id));

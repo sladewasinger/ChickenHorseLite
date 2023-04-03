@@ -73,6 +73,9 @@ class Client {
                 console.error('Received old game state');
                 return;
             }
+            if (gameState.frameNumber > this.engine.gameState.frameNumber + 4) {
+                console.error('Dropped frames: ', gameState.frameNumber - this.engine.gameState.frameNumber + 1);
+            }
             for (const body of gameState.dynamicBodies) {
                 let b = this.engine.matterEngine.world.bodies.find(b => b.id === body.id);
                 if (!b) {
