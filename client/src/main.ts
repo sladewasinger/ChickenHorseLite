@@ -69,6 +69,10 @@ class Client {
         });
 
         this.socket.on('gameState', (gameState: GameState) => {
+            if (gameState.frameNumber < this.engine.gameState.frameNumber) {
+                console.error('Received old game state');
+                return;
+            }
             for (const body of gameState.dynamicBodies) {
                 let b = this.engine.matterEngine.world.bodies.find(b => b.id === body.id);
                 if (!b) {

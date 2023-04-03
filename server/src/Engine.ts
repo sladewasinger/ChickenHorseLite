@@ -58,6 +58,7 @@ export class Engine {
                 clientPlayers.push(clientPlayer);
             }
             const gameState = <GameState>{
+                frameNumber: this.frameNumber,
                 players: clientPlayers,
                 dynamicBodies: this.getDynamicBodies().filter((body) => !body.isStatic),
             };
