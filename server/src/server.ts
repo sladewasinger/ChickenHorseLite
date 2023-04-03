@@ -21,7 +21,7 @@ class App {
             cors: {
                 origin: [
                     "http://localhost:3010",
-                    "https://chickenhorseliteserver.azurewebsites.net:*"
+                    "https://lemon-flower-0ddad9610.2.azurestaticapps.net:*"
                 ],
                 methods: ["GET", "POST"],
             },
@@ -35,6 +35,9 @@ class App {
     private configure(): void {
         // Configure express middleware, routes, etc.
         //this.app.use(cors({ origin: 'http://localhost:3010', methods: ['GET', 'POST'] }));
+        this.app.get('/', (req, res) => {
+            res.send('Welcome to the server. There is nothing to see here.')
+        })
     }
 
     public start(port: number): void {
