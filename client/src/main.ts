@@ -163,7 +163,7 @@ class Client {
 let env = import.meta.env.MODE;
 let url = "http://localhost:3000";
 if (env != "local" && env != "development") {
-    url = "https://chickenhorseliteserver.azurewebsites.net:3000";
+    url = "https://chickenhorseliteserver.azurewebsites.net:8080";
 }
 console.log("Environment:", env, "URL:", url);
 const client = new Client(url);
