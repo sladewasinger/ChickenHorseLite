@@ -34,8 +34,8 @@ export class Engine {
         const clientDelta = now - this.lastClientUpdate;
 
         for (const player of this.players) {
-            this.handleInput(player.id, player.input);
             this.handleLandingCheck(player);
+            this.handleInput(player.id, player.input);
         }
 
         Matter.Engine.update(this.engine, gameDelta);
@@ -164,6 +164,7 @@ export class Engine {
             setTimeout(() => {
                 player.jumpDebounce = false;
             }, 500);
+            Matter.Body.setVelocity(body, { x: body.velocity.x, y: 0 });
             Matter.Body.applyForce(body, body.position, { x: 0, y: -0.05 });
         }
         if (input['a']) {

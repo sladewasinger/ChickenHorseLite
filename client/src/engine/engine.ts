@@ -86,9 +86,9 @@ export class Engine {
         const now = Date.now();
         const delta = now - this.lastUpdated;
 
-        this.handleInput();
         if (this.myPlayer) {
             this.handleLandingCheck(this.myPlayer);
+            this.handleInput();
             const worldBody = this.matterEngine.world.bodies.find(body => body.id === this.myPlayer!.body.id);
             if (worldBody) {
                 const worldBodyPosition = new Vector2D(worldBody.position.x, worldBody.position.y);
@@ -119,6 +119,7 @@ export class Engine {
                 }
                 this.myPlayer.jumpDebounce = false;
             }, 500);
+            Matter.Body.setVelocity(body, { x: body.velocity.x, y: 0 });
             Matter.Body.applyForce(body, body.position, { x: 0, y: -0.05 });
         }
         if (this.input['a']) {
