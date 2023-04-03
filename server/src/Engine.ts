@@ -14,7 +14,7 @@ export class Engine {
     public lastClientUpdate: number = 0;
     public fps: number = 60;
     public frameNumber: number = 0;
-    public clientUpdateFps: number = 25;
+    public clientUpdateFps: number = 30;
     private players: Player[] = [];
 
     constructor(
@@ -27,7 +27,7 @@ export class Engine {
         this.update();
     }
 
-    private update(): void {
+    public update(): void {
         this.frameNumber++;
         const now = Date.now();
         const gameDelta = now - this.lastUpdated;

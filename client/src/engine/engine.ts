@@ -89,8 +89,12 @@ export class Engine {
         this.handleInput();
         if (this.myPlayer) {
             this.handleLandingCheck(this.myPlayer);
-            this.targetCameraPosition = this.renderer.camera.position.lerp(this.myPlayer.body.position, 0.1);
-            this.renderer.panTo(this.targetCameraPosition.x, this.targetCameraPosition.y);
+            const worldBody = this.matterEngine.world.bodies.find(body => body.id === this.myPlayer!.body.id);
+            if (worldBody) {
+                const worldBodyPosition = new Vector2D(worldBody.position.x, worldBody.position.y);
+                this.targetCameraPosition = this.renderer.camera.position.lerp(worldBodyPosition, 0.1);
+                this.renderer.panTo(this.targetCameraPosition.x, this.targetCameraPosition.y);
+            }
         }
 
         Matter.Engine.update(this.matterEngine, delta);

@@ -10,6 +10,7 @@ import { GameState } from 'shared/GameState';
 import Matter from 'matter-js';
 import { MousePan } from './plugins/MousePan';
 import { ClientPlayer } from 'shared/ClientPlayer';
+import { Vector2D } from 'shared/math/Vector2D';
 
 class Client {
     private socket: Socket | undefined;
@@ -89,9 +90,25 @@ class Client {
                     body.label = "player";
                     this.engine.addBody(body);
                 } else {
-                    Matter.Body.setPosition(body, player.body.position);
+                    const bodyPosition2D = new Vector2D(body.position.x, body.position.y);
+
+
+
+                    if (Vector2D.subtract(player.body.position, bodyPosition2D).length() > 25) {
+                        Matter.Body.setPosition(body, player.body.position);
+                        console.log("Teleporting player", player.id);
+                    } else {
+                        Matter.Body.setPosition(body, Vector2D.lerp(bodyPosition2D, player.body.position, 0.1));
+                    }
                     Matter.Body.setAngle(body, player.body.angle);
-                    Matter.Body.setVelocity(body, player.body.velocity);
+
+                    const bodyVelocity2D = new Vector2D(body.velocity.x, body.velocity.y);
+                    if (Vector2D.subtract(player.body.velocity, bodyVelocity2D).length() > 25) {
+                        Matter.Body.setVelocity(body, player.body.velocity);
+                        console.log("snapping player velocity", player.id);
+                    } else {
+                        Matter.Body.setVelocity(body, Vector2D.lerp(bodyVelocity2D, player.body.velocity, 0.1));
+                    }
                     Matter.Body.setAngularVelocity(body, player.body.angularVelocity);
                 }
             };
@@ -149,11 +166,21 @@ class Client {
         }
 
         this.sendEvent('keydown', e.key);
+
+        // Simulate server delay before "intepolating" the keydown
         this.engine.input[e.key] = true;
     }
 
     private handleKeyUp(e: KeyboardEvent): void {
+        const body = this.engine.matterEngine.world.bodies.find(b => b.id === this.engine.myPlayerBodyId);
+        if (!body) {
+            return;
+        }
+
         this.sendEvent('keyup', e.key);
+
+        // Simulate server delay before "intepolating" the keyup
+
         this.engine.input[e.key] = false;
     }
 }
