@@ -116,12 +116,7 @@ export class Engine {
 
     handleKeyDown(key: string) {
         this.input[key] = true;
-
-        if (key != ' ') {
-            this.sendEvent('keydown', key);
-        } else if (this.myPlayer?.grounded && !this.jumpDebounce) {
-            this.sendEvent('keydown', key);
-        }
+        this.sendEvent('keydown', key);
     }
 
     handleInput() {
@@ -157,13 +152,15 @@ export class Engine {
         }
 
         // ray cast down and see if we hit the ground
-        let rayCollisions = Matter.Query
-            .ray(this.matterEngine.world.bodies, body.position, { x: body.position.x, y: body.position.y + 25 });
+        // ray cast down and see if we hit the ground
+        const validIds = this.matterEngine.world.bodies.map((body) => body.id);
+        const rayCollisions = Matter.Query
+            .ray(this.matterEngine.world.bodies, body.position, { x: body.position.x, y: body.position.y + 26 });
+        const filteredCollisions = rayCollisions
+            .filter((collision) => (<any>collision).body.label !== "player")
+            .filter((collision) => validIds.includes(collision.bodyA.id) && validIds.includes(collision.bodyB.id));
 
-        let playerCollisions = rayCollisions
-            .filter((collision) => collision.bodyA.id != body.id && collision.bodyB.id != body.id);
-
-        if (playerCollisions.length > 0) {
+        if (filteredCollisions.length > 0) {
             player.grounded = true;
         }
     }
