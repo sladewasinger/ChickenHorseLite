@@ -61,7 +61,7 @@ export class Engine {
                 players: clientPlayers,
                 dynamicBodies: this.getDynamicBodies().filter((body) => !body.isStatic),
             };
-            this.io.emit("gameState", gameState);
+            this.io.volatile.emit("gameState", gameState); // volatile = don't buffer
             this.lastClientUpdate = now;
         }
 
