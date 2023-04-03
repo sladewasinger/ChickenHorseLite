@@ -21,7 +21,7 @@ class App {
             cors: {
                 origin: [
                     "http://localhost:3010",
-                    "https://lemon-flower-0ddad9610.2.azurestaticapps.net:*"
+                    "https://lemon-flower-0ddad9610.2.azurestaticapps.net"
                 ],
                 methods: ["GET", "POST"],
             },
