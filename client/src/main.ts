@@ -147,7 +147,7 @@ class Client {
             this.engine.myPlayerBodyId = bodyId;
         });
 
-        this.engine.start();
+        this.engine.start(this.socket);
         this.renderer.start(this.engine);
     }
 
@@ -169,10 +169,7 @@ class Client {
             return;
         }
 
-        this.sendEvent('keydown', e.key);
-
-        // Simulate server delay before "intepolating" the keydown
-        this.engine.input[e.key] = true;
+        this.engine.handleKeyDown(e.key);
     }
 
     private handleKeyUp(e: KeyboardEvent): void {

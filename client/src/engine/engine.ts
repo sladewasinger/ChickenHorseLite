@@ -7,8 +7,10 @@ import { ClientPlayer } from "shared/ClientPlayer";
 import { GameState } from "shared/GameState";
 import { Renderer } from "renderer/renderer";
 import { Vector2D } from "shared/math/Vector2D";
+import { Socket } from "socket.io-client";
 
 export class Engine {
+    socket: Socket | undefined;
     public static readonly VERSION = '0.0.1';
     pluginHandler: PluginHandler;
     fps: number = 60;
@@ -20,6 +22,7 @@ export class Engine {
     gameState: GameState = new GameState();
     bodyMetaData: Map<number, BodyMetaData> = new Map();
     targetCameraPosition: Vector2D = new Vector2D(0, 0);
+    jumpDebounce: boolean = false;
 
     constructor(public renderer: Renderer) {
         console.log(`Engine version ${Engine.VERSION} started`);
@@ -72,7 +75,9 @@ export class Engine {
         return this.gameState.players.find(player => player.id === this.myPlayerId);
     }
 
-    start() {
+    start(socket: Socket) {
+        this.socket = socket;
+
         setInterval(() => {
             this.update();
         }, 1000 / this.fps);
@@ -103,21 +108,36 @@ export class Engine {
         this.lastUpdated = Date.now();
     }
 
+    public sendEvent(event: string, data: any): void {
+        if (this.socket && this.socket.connected) {
+            this.socket.emit(event, data);
+        }
+    }
+
+    handleKeyDown(key: string) {
+        this.input[key] = true;
+
+        if (key != ' ') {
+            this.sendEvent('keydown', key);
+        } else if (this.myPlayer?.grounded && !this.jumpDebounce) {
+            this.sendEvent('keydown', key);
+        }
+    }
+
     handleInput() {
         const body = this.matterEngine.world.bodies.find(body => body.id === this.myPlayerBodyId);
         if (!this.myPlayer || !body) {
             return;
         }
 
-        if (this.input[' '] && this.myPlayer.grounded && !this.myPlayer.jumpDebounce) {
-            console.log("jump")
-            this.myPlayer.jumpDebounce = true;
+        if (this.input[' '] && this.myPlayer.grounded && !this.jumpDebounce) {
+            this.jumpDebounce = true;
             this.myPlayer.grounded = false;
             setTimeout(() => {
                 if (!this.myPlayer) {
                     return;
                 }
-                this.myPlayer.jumpDebounce = false;
+                this.jumpDebounce = false;
             }, 500);
             Matter.Body.setVelocity(body, { x: body.velocity.x, y: 0 });
             Matter.Body.applyForce(body, body.position, { x: 0, y: -0.05 });
@@ -132,16 +152,18 @@ export class Engine {
 
     private handleLandingCheck(player: ClientPlayer): void {
         const body = this.matterEngine.world.bodies.find((body) => body.id === player.body.id);
-        if (!body || player.grounded || player.jumpDebounce) {
+        if (!body || this.jumpDebounce) {
             return;
         }
 
         // ray cast down and see if we hit the ground
-        const rayCollisions = Matter.Query
-            .ray(this.matterEngine.world.bodies, body.position, { x: body.position.x, y: body.position.y + (<any>body).radius + 10 })
-            .filter((collision) => collision.bodyA.id !== player.body.id || collision.bodyB.id !== player.body.id);
+        let rayCollisions = Matter.Query
+            .ray(this.matterEngine.world.bodies, body.position, { x: body.position.x, y: body.position.y + 25 });
 
-        if (rayCollisions.length > 0) {
+        let playerCollisions = rayCollisions
+            .filter((collision) => collision.bodyA.id != body.id && collision.bodyB.id != body.id);
+
+        if (playerCollisions.length > 0) {
             player.grounded = true;
         }
     }

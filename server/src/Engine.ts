@@ -189,16 +189,17 @@ export class Engine {
 
     private handleLandingCheck(player: Player): void {
         const body = this.engine.world.bodies.find((body) => body.id === player.bodyId);
-        if (!body || player.grounded || player.jumpDebounce) {
+        if (!body /*|| player.grounded || player.jumpDebounce*/) {
             return;
         }
 
         // ray cast down and see if we hit the ground
         const rayCollisions = Matter.Query
-            .ray(this.engine.world.bodies, body.position, { x: body.position.x, y: body.position.y + (<any>body).radius + 5 })
-            .filter((collision) => collision.bodyA.id !== player.bodyId || collision.bodyB.id !== player.bodyId);
+            .ray(this.engine.world.bodies, body.position, { x: body.position.x, y: body.position.y + (<any>body).radius + 5 });
+        const filteredCollisions = rayCollisions
+            .filter((collision) => (<any>collision).body.label !== "player");
 
-        if (rayCollisions.length > 0) {
+        if (filteredCollisions.length > 0) {
             player.grounded = true;
         }
     }
