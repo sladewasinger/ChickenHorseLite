@@ -133,9 +133,9 @@ export class Engine {
                     return;
                 }
                 this.jumpDebounce = false;
-            }, 500);
-            Matter.Body.setVelocity(body, { x: body.velocity.x, y: 0 });
-            Matter.Body.applyForce(body, body.position, { x: 0, y: -0.05 });
+            }, 525);
+            Matter.Body.setVelocity(body, { x: body.velocity.x, y: -10 });
+            //Matter.Body.applyForce(body, body.position, { x: 0, y: -0.05 });
         }
         if (this.input['a']) {
             Matter.Body.setVelocity(body, { x: -5, y: body.velocity.y });
