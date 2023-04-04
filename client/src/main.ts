@@ -105,17 +105,17 @@ class Client {
                         Matter.Body.setPosition(body, player.body.position);
                         console.log("Teleporting player", player.id);
                     } else {
-                        Matter.Body.setPosition(body, Vector2D.lerp(bodyPosition2D, player.body.position, 0.01));
+                        Matter.Body.setPosition(body, Vector2D.lerp(bodyPosition2D, player.body.position, 0.25));
                     }
                     Matter.Body.setAngle(body, player.body.angle);
 
-                    const bodyVelocity2D = new Vector2D(body.velocity.x, body.velocity.y);
-                    if (Vector2D.subtract(player.body.velocity, bodyVelocity2D).length() > 25) {
-                        Matter.Body.setVelocity(body, player.body.velocity);
-                        console.log("snapping player velocity", player.id);
-                    } else {
-                        Matter.Body.setVelocity(body, Vector2D.lerp(bodyVelocity2D, player.body.velocity, 0.1));
-                    }
+                    // const bodyVelocity2D = new Vector2D(body.velocity.x, body.velocity.y);
+                    // if (Vector2D.subtract(player.body.velocity, bodyVelocity2D).length() > 25) {
+                    Matter.Body.setVelocity(body, player.body.velocity);
+                    //     console.log("snapping player velocity", player.id);
+                    // } else {
+                    //     Matter.Body.setVelocity(body, Vector2D.lerp(bodyVelocity2D, player.body.velocity, 0.5));
+                    // }
                     Matter.Body.setAngularVelocity(body, player.body.angularVelocity);
                 }
             };
