@@ -97,7 +97,7 @@ export class PhysicsEngine {
     public maxDt = 1 / 30;
     private readonly restitution = 0.2; // Restitution factor (0 to 1, where 1 is a perfectly elastic collision)
     private readonly restitutionThreshold = 2; // Restitution threshold
-    private readonly frictionCoefficient = 0.01; // Friction coefficient (0 to 1, where 1 is high friction)
+    private readonly frictionCoefficient = 0.03; // Friction coefficient (0 to 1, where 1 is high friction)
     private readonly thresholdVelocity = 0.5;
     public collisionIterations = 5;
 
@@ -156,7 +156,7 @@ export class PhysicsEngine {
         }
 
         // Handle Collisions
-        const collisionIterations = 5; // Number of iterations for collision resolution
+        const collisionIterations = 10; // Number of iterations for collision resolution
         for (let iteration = 0; iteration < collisionIterations; iteration++) {
             for (let object of this.objects) {
                 for (let other of this.objects) {
@@ -293,7 +293,18 @@ export class PhysicsEngine {
         const tangent = new Vector(-contactNormal.y, contactNormal.x);
         const relativeVelocity = a.velocity.subtract(b.velocity);
         const relativeVelocityAlongTangent = Vector.dot(relativeVelocity, tangent);
-        const frictionImpulseMagnitude = -relativeVelocityAlongTangent / (a.mass + b.mass) * this.frictionCoefficient;
+        const dynamicFrictionImpulseMagnitude = -relativeVelocityAlongTangent / (a.mass + b.mass) * this.frictionCoefficient;
+
+        const staticFrictionThreshold = 0.5; // Threshold to determine when to apply static friction
+        const staticFrictionCoefficient = this.frictionCoefficient * 1.5;
+
+        let frictionImpulseMagnitude;
+
+        if (Math.abs(dynamicFrictionImpulseMagnitude) < staticFrictionThreshold) {
+            frictionImpulseMagnitude = staticFrictionCoefficient * dynamicFrictionImpulseMagnitude;
+        } else {
+            frictionImpulseMagnitude = dynamicFrictionImpulseMagnitude;
+        }
 
         const frictionImpulse = tangent.scale(frictionImpulseMagnitude);
 
