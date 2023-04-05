@@ -45,4 +45,28 @@ export class Vector2D {
     length() {
         return Math.sqrt(this.x * this.x + this.y * this.y);
     }
+
+    magnitude() {
+        return this.length();
+    }
+
+    dot(v: Vector2D): number {
+        return this.x * v.x + this.y * v.y;
+    }
+
+    normalize(): Vector2D {
+        const length = this.length();
+        return new Vector2D(this.x / length, this.y / length);
+    }
+
+    rotate(radians: number) {
+        const newV = new Vector2D(this.x * Math.cos(radians) - this.y * Math.sin(radians), this.x * Math.sin(radians) + this.y * Math.cos(radians));
+        return newV;
+    }
+
+    projectOnto(collisionTangent: Vector2D): Vector2D {
+        const dot = this.dot(collisionTangent);
+        const projection = collisionTangent.multiply(dot / collisionTangent.dot(collisionTangent));
+        return projection;
+    }
 }
