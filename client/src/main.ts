@@ -97,7 +97,7 @@ export class PhysicsEngine {
     public maxDt = 1 / 30;
     private readonly restitution = 0.2; // Restitution factor (0 to 1, where 1 is a perfectly elastic collision)
     private readonly restitutionThreshold = 2; // Restitution threshold
-    private readonly frictionCoefficient = 0.03; // Friction coefficient (0 to 1, where 1 is high friction)
+    private readonly frictionCoefficient = 0.25; // Friction coefficient (0 to 1, where 1 is high friction)
     private readonly thresholdVelocity = 0.5;
     public collisionIterations = 5;
 
@@ -138,25 +138,16 @@ export class PhysicsEngine {
             object.acceleration.y = 0;
         }
 
-        // Update position
+        // Update position and angle
         for (let object of this.objects) {
             if (!object.isStatic) {
-                // // Sleep threshold to prevent small movements
-                // const sleepThreshold = 0.1;
-                // if (Math.abs(object.velocity.x) < sleepThreshold) {
-                //     object.velocity.x = 0;
-                // }
-                // if (Math.abs(object.velocity.y) < sleepThreshold) {
-                //     object.velocity.y = 0;
-                // }
-
                 object.position.x += object.velocity.x * dt;
                 object.position.y += object.velocity.y * dt;
             }
         }
 
         // Handle Collisions
-        const collisionIterations = 10; // Number of iterations for collision resolution
+        const collisionIterations = 100; // Number of iterations for collision resolution
         for (let iteration = 0; iteration < collisionIterations; iteration++) {
             for (let object of this.objects) {
                 for (let other of this.objects) {
@@ -169,21 +160,48 @@ export class PhysicsEngine {
             }
         }
 
-        // Apply damping
-        for (let object of this.objects) {
-            if (!object.isStatic) {
-                object.velocity.x *= 0.99;
-                object.velocity.y *= 0.99;
-            }
-        }
+        // // Apply static friction
+        // const velocityThreshold = 0.1;
+        // for (let object of this.objects) {
+        //     if (!object.isStatic) {
+        //         for (let other of this.objects) {
+        //             if (other !== object && other.isStatic) {
+        //                 if (this.isColliding(object, other) && object.velocity.y === 0) {
+        //                     const frictionForce = this.frictionCoefficient * object.mass * this.gravity;
+        //                     if (object.velocity.x > frictionForce * dt) {
+        //                         object.velocity.x -= frictionForce * dt;
+        //                     } else if (object.velocity.x < -frictionForce * dt) {
+        //                         object.velocity.x += frictionForce * dt;
+        //                     } else {
+        //                         object.velocity.x = 0;
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     if (Math.abs(object.velocity.x) < velocityThreshold) {
+        //         object.velocity.x = 0;
+        //     }
+        //     if (Math.abs(object.velocity.y) < velocityThreshold) {
+        //         object.velocity.y = 0;
+        //     }
+        // }
 
-        // Reset velocity of objects that have come to rest or collided with a static object
-        for (let object of this.objects) {
-            if (Vector.dot(object.velocity, object.velocity) < this.thresholdVelocity * this.thresholdVelocity) {
-                object.velocity.x = 0;
-                object.velocity.y = 0;
-            }
-        }
+        // // Apply damping
+        // for (let object of this.objects) {
+        //     if (!object.isStatic) {
+        //         object.velocity.x *= 0.99;
+        //         object.velocity.y *= 0.99;
+        //     }
+        // }
+
+        // // Reset velocity of objects that have come to rest or collided with a static object
+        // for (let object of this.objects) {
+        //     if (Vector.dot(object.velocity, object.velocity) < this.thresholdVelocity * this.thresholdVelocity) {
+        //         object.velocity.x = 0;
+        //         object.velocity.y = 0;
+        //     }
+        // }
     }
 
     private isColliding(a: PhysicsRectangle, b: PhysicsRectangle) {
@@ -268,16 +286,9 @@ export class PhysicsEngine {
             return; // No collision
         }
 
-        // Calculate impulse
-        const impulseMagnitude = this.calculateImpulse(a, b, contactNormal);
-        const impulse = contactNormal.scale(impulseMagnitude);
-
-        // Apply impulse
-        this.applyImpulse(a, b, impulse);
-
         // Separate the colliding objects
         const percent = 0.8; // Percent to resolve the overlap
-        const slop = 0.01; // Penetration tolerance (in pixels)
+        const slop = 0.5; // Penetration tolerance (in pixels)
         const correctionAmount = Math.max(minOverlap - slop, 0) / (a.mass + b.mass) * percent;
         const correctionVector = contactNormal.scale(correctionAmount);
 
@@ -289,22 +300,24 @@ export class PhysicsEngine {
             b.position = b.position.add(correctionVector.scale(b.mass));
         }
 
+        // Calculate impulse
+        const impulseMagnitude = this.calculateImpulse(a, b, contactNormal);
+        const impulse = contactNormal.scale(impulseMagnitude);
+
+        // Apply impulse
+        this.applyImpulse(a, b, impulse);
+
         // Apply friction
         const tangent = new Vector(-contactNormal.y, contactNormal.x);
         const relativeVelocity = a.velocity.subtract(b.velocity);
         const relativeVelocityAlongTangent = Vector.dot(relativeVelocity, tangent);
-        const dynamicFrictionImpulseMagnitude = -relativeVelocityAlongTangent / (a.mass + b.mass) * this.frictionCoefficient;
+        const dynamicFrictionImpulseMagnitude = -relativeVelocityAlongTangent / (a.mass + b.mass);
 
-        const staticFrictionThreshold = 0.5; // Threshold to determine when to apply static friction
         const staticFrictionCoefficient = this.frictionCoefficient * 1.5;
-
-        let frictionImpulseMagnitude;
-
-        if (Math.abs(dynamicFrictionImpulseMagnitude) < staticFrictionThreshold) {
-            frictionImpulseMagnitude = staticFrictionCoefficient * dynamicFrictionImpulseMagnitude;
-        } else {
-            frictionImpulseMagnitude = dynamicFrictionImpulseMagnitude;
-        }
+        const frictionImpulseMagnitude = Math.min(
+            Math.abs(impulseMagnitude) * staticFrictionCoefficient,
+            Math.abs(dynamicFrictionImpulseMagnitude)
+        ) * Math.sign(dynamicFrictionImpulseMagnitude);
 
         const frictionImpulse = tangent.scale(frictionImpulseMagnitude);
 
@@ -317,7 +330,6 @@ export class PhysicsEngine {
         }
     }
 
-
 }
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -325,7 +337,7 @@ const engine = new PhysicsEngine();
 const renderer = new PhysicsRenderer(canvas);
 
 const rect1 = new PhysicsRectangle(new Vector(100, 100), 50, 50);
-rect1.mass = 1;
+rect1.mass = 10;
 const rect2 = new PhysicsRectangle(new Vector(160, 100), 50, 50);
 rect2.velocity = new Vector(-50, 0);
 const rect3 = new PhysicsRectangle(new Vector(125, 25), 50, 50);
