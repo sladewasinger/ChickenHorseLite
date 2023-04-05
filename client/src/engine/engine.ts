@@ -23,6 +23,7 @@ export class Engine {
     bodyMetaData: Map<number, BodyMetaData> = new Map();
     targetCameraPosition: Vector2D = new Vector2D(0, 0);
     jumpDebounce: boolean = false;
+    maxDt: number = 1000 / 20;
 
     constructor(public renderer: Renderer) {
         console.log(`Engine version ${Engine.VERSION} started`);
@@ -89,7 +90,10 @@ export class Engine {
         }
 
         const now = Date.now();
-        const delta = now - this.lastUpdated;
+        let delta = now - this.lastUpdated;
+        if (delta > this.maxDt) {
+            delta = this.maxDt;
+        }
 
         if (this.myPlayer) {
             this.handleLandingCheck(this.myPlayer);
