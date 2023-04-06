@@ -16,6 +16,7 @@ export class Engine {
     public frameNumber: number = 0;
     public clientUpdateFps: number = 20;
     private players: Player[] = [];
+    private maxDt: number = 1000 / 10;
 
     constructor(
         private io: SocketIOServer,
@@ -30,7 +31,8 @@ export class Engine {
     public update(): void {
         this.frameNumber++;
         const now = Date.now();
-        const gameDelta = now - this.lastUpdated;
+        let gameDelta = now - this.lastUpdated;
+        gameDelta = Math.min(gameDelta, this.maxDt);
         const clientDelta = now - this.lastClientUpdate;
 
         for (const player of this.players) {
