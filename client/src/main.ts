@@ -55,8 +55,10 @@ export class PhysicsRenderer {
     render(engine: PhysicsEngine) {
         this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
         for (let object of engine.objects) {
-            this.context.fillStyle = object.isStatic ? 'green' : 'red';
+            this.context.strokeStyle = 'black';
+            this.context.fillStyle = object.color;
             this.context.fillRect(object.position.x, object.position.y, object.width, object.height);
+            this.context.strokeRect(object.position.x, object.position.y, object.width, object.height);
         }
     }
 }
@@ -66,6 +68,7 @@ export class PhysicsRectangle {
     public acceleration: Vector = new Vector(0, 0);
     public mass: number = 1;
     public resting: boolean = false;
+    public color: string = 'red';
 
     constructor(public position: Vector, public width: number, public height: number, public isStatic: boolean = false) {
     }
@@ -153,59 +156,28 @@ export class PhysicsEngine {
                 for (let other of this.objects) {
                     if (other !== object) {
                         if (this.isColliding(object, other)) {
-                            this.handleCollision(object, other, dt);
+                            this.handleCollision(object, other, dt / collisionIterations);
                         }
                     }
                 }
             }
         }
-
-        // // Apply static friction
-        // const velocityThreshold = 0.1;
-        // for (let object of this.objects) {
-        //     if (!object.isStatic) {
-        //         for (let other of this.objects) {
-        //             if (other !== object && other.isStatic) {
-        //                 if (this.isColliding(object, other) && object.velocity.y === 0) {
-        //                     const frictionForce = this.frictionCoefficient * object.mass * this.gravity;
-        //                     if (object.velocity.x > frictionForce * dt) {
-        //                         object.velocity.x -= frictionForce * dt;
-        //                     } else if (object.velocity.x < -frictionForce * dt) {
-        //                         object.velocity.x += frictionForce * dt;
-        //                     } else {
-        //                         object.velocity.x = 0;
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     if (Math.abs(object.velocity.x) < velocityThreshold) {
-        //         object.velocity.x = 0;
-        //     }
-        //     if (Math.abs(object.velocity.y) < velocityThreshold) {
-        //         object.velocity.y = 0;
-        //     }
-        // }
-
-        // // Apply damping
-        // for (let object of this.objects) {
-        //     if (!object.isStatic) {
-        //         object.velocity.x *= 0.99;
-        //         object.velocity.y *= 0.99;
-        //     }
-        // }
-
-        // // Reset velocity of objects that have come to rest or collided with a static object
-        // for (let object of this.objects) {
-        //     if (Vector.dot(object.velocity, object.velocity) < this.thresholdVelocity * this.thresholdVelocity) {
-        //         object.velocity.x = 0;
-        //         object.velocity.y = 0;
-        //     }
-        // }
     }
 
     private isColliding(a: PhysicsRectangle, b: PhysicsRectangle) {
-        return a.left() < b.right() && a.right() > b.left() && a.top() < b.bottom() && a.bottom() > b.top();
+        // Calculate the distance between the centers of the objects
+        const distance = a.position.subtract(b.position);
+        const overlap = a.left() < b.right() && a.right() > b.left() && a.top() < b.bottom() && a.bottom() > b.top();
+
+        // Check if the objects are moving towards each other
+        const relativeVelocity = a.velocity.subtract(b.velocity);
+        const velocityAlongNormal = Vector.dot(relativeVelocity, distance.normalize());
+
+        if (overlap && Math.abs(velocityAlongNormal) > 0) {
+            return true;
+        }
+
+        return false;
     }
 
     private handleCollision(a: PhysicsRectangle, b: PhysicsRectangle, dt: number) {
@@ -289,15 +261,18 @@ export class PhysicsEngine {
         // Separate the colliding objects
         const percent = 0.8; // Percent to resolve the overlap
         const slop = 0.5; // Penetration tolerance (in pixels)
-        const correctionAmount = Math.max(minOverlap - slop, 0) / (a.mass + b.mass) * percent;
-        const correctionVector = contactNormal.scale(correctionAmount);
+        const totalMass = a.mass + b.mass;
+        const correctionAmountA = (b.mass / totalMass) * Math.max(minOverlap - slop, 0) * percent;
+        const correctionAmountB = (a.mass / totalMass) * Math.max(minOverlap - slop, 0) * percent;
+        const correctionVectorA = contactNormal.scale(correctionAmountA);
+        const correctionVectorB = contactNormal.scale(-correctionAmountB);
 
         if (!a.isStatic) {
-            a.position = a.position.subtract(correctionVector.scale(a.mass));
+            a.position = a.position.add(correctionVectorA);
         }
 
         if (!b.isStatic) {
-            b.position = b.position.add(correctionVector.scale(b.mass));
+            b.position = b.position.add(correctionVectorB);
         }
 
         // Calculate impulse
@@ -308,25 +283,35 @@ export class PhysicsEngine {
         this.applyImpulse(a, b, impulse);
 
         // Apply friction
-        const tangent = new Vector(-contactNormal.y, contactNormal.x);
         const relativeVelocity = a.velocity.subtract(b.velocity);
-        const relativeVelocityAlongTangent = Vector.dot(relativeVelocity, tangent);
-        const dynamicFrictionImpulseMagnitude = -relativeVelocityAlongTangent / (a.mass + b.mass);
+        const relativeVelocityAlongNormal = Vector.dot(relativeVelocity, contactNormal);
 
-        const staticFrictionCoefficient = this.frictionCoefficient * 1.5;
-        const frictionImpulseMagnitude = Math.min(
-            Math.abs(impulseMagnitude) * staticFrictionCoefficient,
-            Math.abs(dynamicFrictionImpulseMagnitude)
-        ) * Math.sign(dynamicFrictionImpulseMagnitude);
-
-        const frictionImpulse = tangent.scale(frictionImpulseMagnitude);
-
-        if (!a.isStatic) {
-            a.velocity = a.velocity.add(frictionImpulse.scale(1 / a.mass));
+        if (relativeVelocityAlongNormal > 0) {
+            // Objects are moving away from each other, no friction needed
+            return;
         }
 
-        if (!b.isStatic) {
-            b.velocity = b.velocity.subtract(frictionImpulse.scale(1 / b.mass));
+        const tangent = relativeVelocity.subtract(contactNormal.scale(relativeVelocityAlongNormal));
+        const tangentMagnitude = tangent.length();
+
+        if (tangentMagnitude > 0) {
+            const tangentDirection = tangent.scale(1 / tangentMagnitude);
+            const relativeVelocityAlongTangent = Vector.dot(relativeVelocity, tangentDirection);
+            const frictionCoefficient = Math.abs(relativeVelocityAlongTangent) < this.thresholdVelocity ?
+                0 :
+                this.frictionCoefficient * Math.max(1, tangentMagnitude / relativeVelocity.length());
+            const frictionImpulseMagnitude = -relativeVelocityAlongTangent / (a.mass + b.mass) * frictionCoefficient;
+
+            const frictionImpulse = tangentDirection.scale(frictionImpulseMagnitude);
+            frictionImpulse.y *= 0.00; // Reduce friction in the y-axis
+
+            if (!a.isStatic) {
+                a.velocity = a.velocity.add(frictionImpulse.scale(1 / a.mass));
+            }
+
+            if (!b.isStatic) {
+                b.velocity = b.velocity.subtract(frictionImpulse.scale(1 / b.mass));
+            }
         }
     }
 
@@ -338,6 +323,7 @@ const renderer = new PhysicsRenderer(canvas);
 
 const rect1 = new PhysicsRectangle(new Vector(100, 100), 50, 50);
 rect1.mass = 10;
+rect1.color = 'blue';
 const rect2 = new PhysicsRectangle(new Vector(160, 100), 50, 50);
 rect2.velocity = new Vector(-50, 0);
 const rect3 = new PhysicsRectangle(new Vector(125, 25), 50, 50);
@@ -350,6 +336,12 @@ engine.addObject(rect2);
 engine.addObject(rect3);
 engine.addObject(rect4);
 engine.addObject(ground);
+
+for (let i = 0; i < 50; i++) {
+    const rect = new PhysicsRectangle(new Vector(100 + i * 10, 100), 10 + Math.random() * 40, 10 + Math.random() * 40);
+    rect.velocity = new Vector(Math.random() * 1000 - 500, Math.random() * 1000 - 500);
+    engine.addObject(rect);
+}
 
 
 let keys: Map<string, boolean> = new Map<string, boolean>();
@@ -388,84 +380,3 @@ function update(time: number) {
 }
 
 requestAnimationFrame(update);
-
-/*    private resolveCollision_OLD2(a: PhysicsRectangle, b: PhysicsRectangle) {
-        const overlapX = Math.max(0, Math.min(a.right(), b.right()) - Math.max(a.left(), b.left()));
-        const overlapY = Math.max(0, Math.min(a.bottom(), b.bottom()) - Math.max(a.top(), b.top()));
-
-        let frictionForce = 0;
-
-        // Determine which axis has the minimum overlap.
-        if (overlapX < overlapY) {
-            // Resolve the collision along the x-axis.
-            if (a.position.x < b.position.x) {
-                a.position.x -= overlapX;
-            } else {
-                a.position.x += overlapX;
-            }
-            // Apply restitution to the x-velocity.
-            a.velocity.x *= -this.restitution;
-
-            // Calculate the friction force.
-            frictionForce = this.frictionCoefficient * Math.abs(a.velocity.y - b.velocity.y);
-            // Apply the friction force to the x-velocity of both objects.
-            a.velocity.x += (a.velocity.x > 0 ? -1 : 1) * frictionForce * (a.mass / (a.mass + b.mass));
-            b.velocity.x -= (a.velocity.x > 0 ? -1 : 1) * frictionForce * (b.mass / (a.mass + b.mass));
-        } else {
-            // Resolve the collision along the y-axis.
-            if (a.position.y < b.position.y) {
-                a.position.y -= overlapY;
-            } else {
-                a.position.y += overlapY;
-            }
-            // Apply restitution to the y-velocity.
-            a.velocity.y *= -this.restitution;
-
-            // Calculate the friction force.
-            frictionForce = this.frictionCoefficient * Math.abs(a.velocity.x - b.velocity.x);
-            // Apply the friction force to the y-velocity of both objects.
-            a.velocity.y += (a.velocity.y > 0 ? -1 : 1) * frictionForce * (a.mass / (a.mass + b.mass));
-            b.velocity.y -= (a.velocity.y > 0 ? -1 : 1) * frictionForce * (b.mass / (a.mass + b.mass));
-        }
-    }
-
-
-    private resolveCollision_OLD(ground: PhysicsRectangle, object: PhysicsRectangle) {
-        const overlapX = Math.max(0, Math.min(object.right(), ground.right()) - Math.max(object.left(), ground.left()));
-        const overlapY = Math.max(0, Math.min(object.bottom(), ground.bottom()) - Math.max(object.top(), ground.top()));
-
-        let frictionForce = 0;
-
-        // Determine which axis has the minimum overlap.
-        if (overlapX < overlapY) {
-            // Resolve the collision along the x-axis.
-            if (object.position.x < ground.position.x) {
-                object.position.x -= overlapX;
-            } else {
-                object.position.x += overlapX;
-            }
-            // Apply restitution to the x-velocity.
-            object.velocity.x *= -this.restitution;
-
-            // Calculate the friction force.
-            frictionForce = this.frictionCoefficient * Math.abs(object.velocity.y);
-            // Apply the friction force to the x-velocity.
-            object.velocity.x += (object.velocity.x > 0 ? -1 : 1) * frictionForce * (object.mass / (object.mass + ground.mass));
-        } else {
-            // Resolve the collision along the y-axis.
-            if (object.position.y < ground.position.y) {
-                object.position.y -= overlapY;
-            } else {
-                object.position.y += overlapY;
-            }
-            // Apply restitution to the y-velocity.
-            object.velocity.y *= -this.restitution;
-
-            // Calculate the friction force.
-            frictionForce = this.frictionCoefficient * Math.abs(object.velocity.x);
-            // Apply the friction force to the y-velocity.
-            object.velocity.y += (object.velocity.y > 0 ? -1 : 1) * frictionForce * (object.mass / (object.mass + ground.mass));
-        }
-    }
-
-    */
