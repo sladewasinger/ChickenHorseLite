@@ -8,6 +8,7 @@ import { Server as SocketIOServer, Socket } from "socket.io";
 import { GameState } from "shared/GameState.js";
 import { ClientPlayer } from "shared/ClientPlayer.js";
 import { CustomBody } from "./models/CustomBody.js";
+import { Vector2D } from "../../shared/math/Vector2D.js";
 
 export class Engine {
     public engine: Matter.Engine;
@@ -16,8 +17,12 @@ export class Engine {
     public fps: number = 60;
     public frameNumber: number = 0;
     public clientUpdateFps: number = 20;
+
+    private startingZone: CustomBody | undefined;
+    private goal: CustomBody | undefined;
     private players: Player[] = [];
     private maxDt: number = 1000 / 10;
+
 
     constructor(
         private io: SocketIOServer,
@@ -56,6 +61,7 @@ export class Engine {
                     name: player.name,
                     grounded: player.grounded,
                     jumpDebounce: player.jumpDebounce,
+                    jumpReleased: player.jumpReleased,
                     body: ShapeFactory.GetSimpleBodyFromBody(pBody),
                     latestCommandId: player.latestCommandId,
                 };
@@ -116,6 +122,9 @@ export class Engine {
         startingZone.isSensor = true;
         goal.isSensor = true;
 
+        this.startingZone = startingZone;
+        this.goal = goal;
+
         Matter.World.add(this.engine.world, [startingZone, goal]);
     }
 
@@ -124,10 +133,18 @@ export class Engine {
     }
 
     public addPlayer(id: string, name: string): void {
+        if (!this.startingZone || !this.goal) {
+            throw new Error("Level is not loaded");
+        }
+
         const newPlayer = new Player(id, name);
         this.players.push(newPlayer);
 
-        const playerBody = ShapeFactory.CreateCircle(200, 0, 20, false);
+        const playerBody = ShapeFactory.CreateCircle(
+            this.startingZone.position.x,
+            this.startingZone.position.y,
+            20,
+            false);
         playerBody.label = "player";
 
         newPlayer.bodyId = playerBody.id;
@@ -161,6 +178,45 @@ export class Engine {
         this.io.emit("removeBodies", [player.bodyId]);
     }
 
+    handleKeyDown(id: string, keyInput: { key: string; utcTime: number; commandId: number; }) {
+        const player = this.getPlayer(id);
+        if (!player) {
+            console.log("Player not found", id)
+            return;
+        }
+
+        const key = keyInput.key;
+        const utcTime = keyInput.utcTime;
+
+        const utcNow = new Date().getTime();
+        console.log("keydown", key, utcNow - utcTime);
+
+        player.input[key] = { pressed: true, time: utcTime };
+        player.latestCommandId = keyInput.commandId;
+        this.handleInput(player.id, player.input);
+    }
+
+    handleKeyUp(id: string, keyInput: { key: string; utcTime: number; commandId: number; }) {
+        const player = this.getPlayer(id);
+        if (!player) {
+            return;
+        }
+
+        const key = keyInput.key;
+        const utcTime = keyInput.utcTime;
+
+
+        const utcNow = new Date().getTime();
+        console.log("keyup", key, utcNow - utcTime);
+
+        player.input[key] = { pressed: false, time: utcTime };
+        player.latestCommandId = keyInput.commandId;
+
+        if (key === ' ') {
+            player.jumpReleased = true;
+        }
+    }
+
     public handleInput(id: string, input: Input): void {
         const player = this.getPlayer(id);
         if (!player) {
@@ -172,19 +228,55 @@ export class Engine {
             return;
         }
 
-        if (input[' '] && !player.jumpDebounce && player.grounded) {
-            player.jumpDebounce = true;
-            player.grounded = false;
-            setTimeout(() => {
-                player.jumpDebounce = false;
-            }, 500);
-            Matter.Body.setVelocity(body, { x: body.velocity.x, y: -10 });
+        if (input[' ']?.pressed) {
+            if (player.jumpReleased && !player.jumpDebounce) {
+                if (player.grounded) {
+                    player.jumpDebounce = true;
+                    player.grounded = false;
+                    player.hasDoubleJump = true;
+                    setTimeout(() => {
+                        player.jumpDebounce = false;
+                    }, 100);
+
+
+                    const dt = new Date().getTime() - input[' '].time;
+                    const baseVelocity = { ...body.velocity };
+                    baseVelocity.y = -10;
+
+                    // // Apply gravity
+                    const gravity = this.engine.gravity;
+                    baseVelocity.y += gravity.y * dt / 1000;
+
+
+                    const xAdjustment = baseVelocity.x * dt / 1000;
+                    const yAdjustment = (baseVelocity.y * (dt / 1000)) * 50;
+                    console.log('basevelocity.y', baseVelocity.y);
+                    console.log('y adjustment', yAdjustment);
+
+                    Matter.Body.setVelocity(body, { x: body.velocity.x, y: baseVelocity.y });
+                    Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y + yAdjustment });
+                } else if (player.hasDoubleJump) {
+                    player.jumpDebounce = true;
+                    player.hasDoubleJump = false;
+                    setTimeout(() => {
+                        player.jumpDebounce = false;
+                    }, 100);
+                    Matter.Body.setVelocity(body, { x: body.velocity.x, y: -10 });
+                }
+            } else {
+                player.jumpReleased = false;
+            }
         }
-        if (input['a']) {
-            Matter.Body.setVelocity(body, { x: -5, y: body.velocity.y });
+
+        const moveVector = new Vector2D(0, 0);
+        if (input['a']?.pressed) {
+            moveVector.x -= 1;
         }
-        if (input['d']) {
-            Matter.Body.setVelocity(body, { x: 5, y: body.velocity.y });
+        if (input['d']?.pressed) {
+            moveVector.x += 1;
+        }
+        if (moveVector.length() > 0) {
+            Matter.Body.setVelocity(body, { x: moveVector.x * 5, y: body.velocity.y });
         }
     }
 
@@ -196,7 +288,7 @@ export class Engine {
 
         // ray cast down and see if we hit the ground
         const rayCollisions = Matter.Query
-            .ray(this.engine.world.bodies, body.position, { x: body.position.x, y: body.position.y + (<any>body).radius + 5 });
+            .ray(this.engine.world.bodies, body.position, { x: body.position.x, y: body.position.y + (<any>body).radius + 5 }, 10);
         const filteredCollisions = rayCollisions
             .filter((collision) => (<any>collision).body.id !== player.bodyId)
             .filter((collision) => (<any>collision).body.isSensor !== true);

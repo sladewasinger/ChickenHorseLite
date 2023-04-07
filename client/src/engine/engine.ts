@@ -8,6 +8,7 @@ import { GameState } from "shared/GameState";
 import { Renderer } from "renderer/renderer";
 import { Vector2D } from "shared/math/Vector2D";
 import { Socket } from "socket.io-client";
+import { CustomBody } from "models/CustomBody";
 
 export class Engine {
     public static readonly VERSION = '0.0.1';
@@ -24,8 +25,8 @@ export class Engine {
     targetCameraPosition: Vector2D = new Vector2D(0, 0);
     jumpDebounce: boolean = false;
     maxDt: number = 1000 / 20;
-    public latestCommandId: number = 0;
-
+    latestCommandId: number = 0;
+    inputDebounce: boolean = false;
 
     constructor(public renderer: Renderer) {
         console.log(`Engine version ${Engine.VERSION} started`);
@@ -44,12 +45,16 @@ export class Engine {
         }
         const player = gameState.players.find(p => p.id === this.myPlayerId);
         if (player) {
+            //this.renderer.renderGhostPlayer(player);
+
             if (player.latestCommandId < this.latestCommandId) {
                 console.error('Server is behind client inputs. Skipping this update.');
                 return;
             }
             console.log('gameStateUpadted', player.latestCommandId);
         }
+
+        this.gameState = gameState;
 
         for (const body of gameState.dynamicBodies) {
             let b = this.matterEngine.world.bodies.find(b => b.id === body.id);
@@ -64,31 +69,29 @@ export class Engine {
             }
         }
 
-        this.gameState = gameState;
         for (const player of gameState.players) {
             const body = this.matterEngine.world.bodies.find(b => b.id === player.body.id);
             if (!body) {
                 const body = this.createBodyFromSimpleBody(player.body);
                 body.label = "player";
+
                 this.addBody(body);
             } else {
                 const bodyPosition2D = new Vector2D(body.position.x, body.position.y);
 
-                if (Vector2D.subtract(player.body.position, bodyPosition2D).length() > 500) {
+                if (Vector2D.subtract(player.body.position, bodyPosition2D).length() > 100) {
                     Matter.Body.setPosition(body, player.body.position);
                     console.log("Teleporting player", player.id);
                 } else {
-                    Matter.Body.setPosition(body, Vector2D.lerp(bodyPosition2D, player.body.position, 0.1));
+                    Matter.Body.setPosition(body, Vector2D.lerp(bodyPosition2D, player.body.position, 0.25));
                 }
-                Matter.Body.setAngle(body, player.body.angle);
+                //Matter.Body.setPosition(body, player.body.position);
 
                 // const bodyVelocity2D = new Vector2D(body.velocity.x, body.velocity.y);
-                // if (Vector2D.subtract(player.body.velocity, bodyVelocity2D).length() > 25) {
+                // const velocityLerpValue = 0.1;
+                //Matter.Body.setVelocity(body, Vector2D.lerp(bodyVelocity2D, player.body.velocity, velocityLerpValue));
                 Matter.Body.setVelocity(body, player.body.velocity);
-                //     console.log("snapping player velocity", player.id);
-                // } else {
-                //     Matter.Body.setVelocity(body, Vector2D.lerp(bodyVelocity2D, player.body.velocity, 0.5));
-                // }
+                Matter.Body.setAngle(body, player.body.angle);
                 Matter.Body.setAngularVelocity(body, player.body.angularVelocity);
             }
         };
@@ -104,7 +107,10 @@ export class Engine {
             label: simpleBody.label,
             isSensor: simpleBody.isSensor,
             fillColor: simpleBody.fillColor,
-            strokeColor: simpleBody.strokeColor
+            strokeColor: simpleBody.strokeColor,
+            radius: simpleBody.radius,
+            width: simpleBody.width,
+            height: simpleBody.height,
         };
 
         if (simpleBody.shape === 'circle') {
@@ -183,23 +189,23 @@ export class Engine {
     handleKeyDown(key: string) {
         const utcNow = new Date().getTime();
 
-        if (!this.input[key]) {
+        if (!this.input[key]?.pressed) {
             this.latestCommandId++;
             this.sendEvent('keydown', { key: key, utcTime: utcNow, commandId: this.latestCommandId });
-            console.log('sent keydown', key, this.latestCommandId);
         }
 
-        this.input[key] = true;
+        this.input[key] = { pressed: true, time: utcNow };
     }
 
     handleKeyUp(key: string) {
         const utcNow = new Date().getTime();
 
-        if (this.input[key]) {
-            this.sendEvent('keyup', { key: key, utcTime: utcNow });
+        if (this.input[key]?.pressed) {
+            this.latestCommandId++;
+            this.sendEvent('keyup', { key: key, utcTime: utcNow, commandId: this.latestCommandId });
         }
 
-        this.input[key] = false;
+        this.input[key] = { pressed: false, time: utcNow };
     }
 
     handleInput() {
@@ -208,23 +214,23 @@ export class Engine {
             return;
         }
 
-        if (this.input[' '] && this.myPlayer.grounded) {
-            // this.jumpDebounce = true;
-            // this.myPlayer.grounded = false;
-            // setTimeout(() => {
-            //     if (!this.myPlayer) {
-            //         return;
-            //     }
-            //     this.jumpDebounce = false;
-            // }, 525);
+        if (this.input[' ']?.pressed && this.myPlayer.grounded && this.myPlayer.jumpReleased) {
             Matter.Body.setVelocity(body, { x: body.velocity.x, y: -10 });
-            //Matter.Body.applyForce(body, body.position, { x: 0, y: -0.05 });
         }
-        if (this.input['a']) {
-            Matter.Body.setVelocity(body, { x: -5, y: body.velocity.y });
+
+        const moveVector = new Vector2D(0, 0);
+        if (this.input['a']?.pressed) {
+            moveVector.x -= 1;
         }
-        if (this.input['d']) {
-            Matter.Body.setVelocity(body, { x: 5, y: body.velocity.y });
+        if (this.input['d']?.pressed) {
+            moveVector.x += 1;
+        }
+        if (moveVector.length() > 0 && !this.inputDebounce) {
+            this.inputDebounce = true;
+            setTimeout(() => {
+                this.inputDebounce = false;
+                Matter.Body.setVelocity(body, { x: moveVector.x * 5, y: body.velocity.y });
+            }, 5);
         }
     }
 

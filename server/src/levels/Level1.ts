@@ -35,9 +35,49 @@ export class Level1 implements Level {
             true
         );
 
+        const platform1 = ShapeFactory.CreateRectangle(
+            width / 2 - 200,
+            height / 2 + 100,
+            200,
+            50,
+            true
+        );
+
+        const platform2 = ShapeFactory.CreateRectangle(
+            width / 2 + 200,
+            height / 2 - 100,
+            200,
+            50,
+            true
+        );
+
+        const platform3 = ShapeFactory.CreateRectangle(
+            width / 2,
+            height / 2,
+            200,
+            50,
+            true
+        );
+
+        const platform4 = ShapeFactory.CreateRectangle(
+            width / 2 - 400,
+            height / 2 + 240,
+            200,
+            50,
+            true
+        );
+
+        const platform5 = ShapeFactory.CreateRectangle(
+            width / 2 + 400,
+            height / 2 - 200,
+            200,
+            50,
+            true
+        );
+
         const startingZone = ShapeFactory.CreateRectangle(
-            100,
-            height - 100,
+            100 + 25,
+            height - 100 - 50,
             200,
             200,
             true
@@ -46,8 +86,8 @@ export class Level1 implements Level {
         startingZone.fillColor = "rgba(0, 0, 255, 0.5)";
 
         const goal = ShapeFactory.CreateRectangle(
-            width - 100,
-            height - 100,
+            width - 100 - 25,
+            100,
             200,
             200,
             true
@@ -55,6 +95,7 @@ export class Level1 implements Level {
         goal.label = "goal";
         goal.fillColor = "red";
 
-        return [startingZone, goal, ground, leftWall, rightWall];
+        return [startingZone, goal, ground, leftWall, rightWall,
+            platform1, platform2, platform3, platform4, platform5];
     }
 }

@@ -1,3 +1,3 @@
 export class Input {
-    [key: string]: boolean;
+    [key: string]: { pressed: boolean, time: number };
 }

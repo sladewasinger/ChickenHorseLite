@@ -68,43 +68,19 @@ class App {
             });
 
             socket.on("keydown", (keyInput: { key: string, utcTime: number, commandId: number }) => {
-                const player = this.engine.getPlayer(socket.id);
-                if (!player) {
+                if (!this.validateKey(keyInput.key)) {
                     return;
                 }
 
-                const key = keyInput.key;
-                const utcTime = keyInput.utcTime;
-
-                if (!this.validateKey(key)) {
-                    return;
-                }
-
-                const utcNow = new Date().getTime();
-                console.log("keydown", key, utcNow - utcTime);
-
-                player.input[key] = true;
-                player.latestCommandId = keyInput.commandId;
-                this.engine.handleInput(player.id, player.input);
+                this.engine.handleKeyDown(socket.id, keyInput);
             });
 
-            socket.on("keyup", (keyTime: { key: string, utcTime: number }) => {
-                const player = this.engine.getPlayer(socket.id);
-                if (!player) {
+            socket.on("keyup", (keyInput: { key: string, utcTime: number, commandId: number }) => {
+                if (!this.validateKey(keyInput.key)) {
                     return;
                 }
 
-                const key = keyTime.key;
-                const utcTime = keyTime.utcTime;
-
-                if (!this.validateKey(key)) {
-                    return;
-                }
-
-                const utcNow = new Date().getTime();
-                console.log("keyup", key, utcNow - utcTime);
-
-                player.input[key] = false;
+                this.engine.handleKeyUp(socket.id, keyInput);
             });
         });
     }

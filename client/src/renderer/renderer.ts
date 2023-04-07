@@ -5,6 +5,7 @@ import { Mouse } from "./mouse";
 import { Rectangle } from "../models/Rectangle";
 import { Vector2D } from "shared/math/Vector2D";
 import { CustomBody } from "models/CustomBody";
+import { ClientPlayer } from "shared/ClientPlayer";
 
 export class Renderer {
     camera: Camera;
@@ -13,6 +14,8 @@ export class Renderer {
 
     rectangles: Rectangle[] = [];
     scale: number;
+
+    player: ClientPlayer | undefined;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -120,11 +123,11 @@ export class Renderer {
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         ctx.restore();
 
-        for (const body of bodies) {
-            const offset = this.camera.position.clone();
-            offset.x -= this.canvas.width / 2;
-            offset.y -= this.canvas.height / 2;
+        const offset = this.camera.position.clone();
+        offset.x -= this.canvas.width / 2;
+        offset.y -= this.canvas.height / 2;
 
+        for (const body of bodies) {
             const vertices = body.vertices;
 
             ctx.beginPath();
@@ -148,12 +151,25 @@ export class Renderer {
             ctx.stroke();
         }
 
+        if (this.player) {
+            if (!this.player.body || !this.player.body.radius) {
+                console.log('player body not found or radius is null');
+            } else {
+                console.log('renderGhostPlayer');
+                ctx.beginPath();
+                ctx.arc(this.player.body.position.x - offset.x, this.player.body.position.y - offset.y, this.player.body.radius!, 0, 2 * Math.PI, false);
+                ctx.fillStyle = 'rgba(0, 255, 255, 0.5)';
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#003300';
+                ctx.stroke();
+            }
+        }
+
         window.requestAnimationFrame(() => this.render(engine));
     }
 
-    clearRectangle(box: Rectangle) {
-        if (this.rectangles.includes(box)) {
-            this.rectangles.splice(this.rectangles.indexOf(box), 1);
-        }
+    renderGhostPlayer(player: ClientPlayer) {
+        this.player = player;
     }
 }

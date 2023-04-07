@@ -12,7 +12,10 @@ export class Player {
     public input: Input = new Input();
     public jumpDebounce: boolean = false;
     public grounded: boolean = true;
+    public hasDoubleJump: boolean = true;
+    public jumpReleased: boolean = true;
     public latestCommandId: number = 0;
+
 
     constructor(id: string, name: string) {
         this.id = id;

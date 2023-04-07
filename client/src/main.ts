@@ -148,6 +148,10 @@ class Client {
             return;
         }
 
+        if (!this.validateKey(e.key)) {
+            return;
+        }
+
         const utcNow = new Date().getTime();
         console.log("keydown", e.key, utcNow);
         this.engine.handleKeyDown(e.key);
@@ -162,9 +166,25 @@ class Client {
             return;
         }
 
+        if (!this.validateKey(e.key)) {
+            return;
+        }
+
+
         const utcNow = new Date().getTime();
         console.log("keyup", e.key, utcNow);
         this.engine.handleKeyUp(e.key);
+    }
+
+
+    private validateKey(key: string) {
+        const validKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d", " "];
+
+        if (!validKeys.includes(key)) {
+            return false;
+        }
+
+        return true;
     }
 }
 
