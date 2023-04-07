@@ -78,7 +78,7 @@ export class Engine {
                     Matter.Body.setPosition(body, player.body.position);
                     console.log("Teleporting player", player.id);
                 } else {
-                    Matter.Body.setPosition(body, Vector2D.lerp(bodyPosition2D, player.body.position, 0.25));
+                    Matter.Body.setPosition(body, Vector2D.lerp(bodyPosition2D, player.body.position, 0.1));
                 }
                 Matter.Body.setAngle(body, player.body.angle);
 
