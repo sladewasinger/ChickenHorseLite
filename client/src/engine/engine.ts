@@ -208,15 +208,15 @@ export class Engine {
             return;
         }
 
-        if (this.input[' '] && this.myPlayer.grounded && !this.jumpDebounce) {
-            this.jumpDebounce = true;
-            this.myPlayer.grounded = false;
-            setTimeout(() => {
-                if (!this.myPlayer) {
-                    return;
-                }
-                this.jumpDebounce = false;
-            }, 525);
+        if (this.input[' '] && this.myPlayer.grounded) {
+            // this.jumpDebounce = true;
+            // this.myPlayer.grounded = false;
+            // setTimeout(() => {
+            //     if (!this.myPlayer) {
+            //         return;
+            //     }
+            //     this.jumpDebounce = false;
+            // }, 525);
             Matter.Body.setVelocity(body, { x: body.velocity.x, y: -10 });
             //Matter.Body.applyForce(body, body.position, { x: 0, y: -0.05 });
         }

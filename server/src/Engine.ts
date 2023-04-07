@@ -203,6 +203,8 @@ export class Engine {
 
         if (filteredCollisions.length > 0) {
             player.grounded = true;
+        } else {
+            player.grounded = false;
         }
     }
 }

@@ -85,6 +85,7 @@ class App {
 
                 player.input[key] = true;
                 player.latestCommandId = keyInput.commandId;
+                this.engine.handleInput(player.id, player.input);
             });
 
             socket.on("keyup", (keyTime: { key: string, utcTime: number }) => {

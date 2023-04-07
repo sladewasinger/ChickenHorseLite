@@ -43,7 +43,7 @@ export class Level1 implements Level {
             true
         );
         startingZone.label = "startingZone";
-        startingZone.fillColor = "blue";
+        startingZone.fillColor = "rgba(0, 0, 255, 0.5)";
 
         const goal = ShapeFactory.CreateRectangle(
             width - 100,
