@@ -1,6 +1,5 @@
-import { Vector2D } from "./math/Vector2D";
-
-export type SimpleBodyType = "circle" | "rectangle";
+import { Vector2D } from "./math/Vector2D.js";
+export type SimpleBodyShape = "circle" | "rectangle";
 
 export class SimpleBody {
     public id: number;
@@ -9,11 +8,14 @@ export class SimpleBody {
     public angle: number;
     public angularVelocity: number;
     public isStatic: boolean = false;
-    public type: SimpleBodyType;
+    public shape: SimpleBodyShape;
     public radius: number | undefined;
     public width: number | undefined;
     public height: number | undefined;
     public label: string | undefined;
+    public isSensor: boolean = false;
+    public fillColor: string | undefined;
+    public strokeColor: string | undefined;
 
     constructor(
         id: number,
@@ -21,7 +23,7 @@ export class SimpleBody {
         velocity: Vector2D,
         angle: number,
         angularVelocity: number,
-        type: SimpleBodyType,
+        shape: SimpleBodyShape,
         isStatic: boolean = false
     ) {
         this.id = id;
@@ -29,7 +31,21 @@ export class SimpleBody {
         this.velocity = velocity;
         this.angle = angle;
         this.angularVelocity = angularVelocity;
-        this.type = type;
+        this.shape = shape;
         this.isStatic = isStatic;
+        this.fillColor = 'red';
+    }
+
+    public static CreateCircle(x: number, y: number, radius: number, isStatic: boolean = false) {
+        const circle = new SimpleBody(0, new Vector2D(x, y), new Vector2D(0, 0), 0, 0, "circle", isStatic);
+        circle.radius = radius;
+        return circle;
+    }
+
+    public static CreateRectangle(x: number, y: number, width: number, height: number, isStatic: boolean = false) {
+        const rect = new SimpleBody(0, new Vector2D(x, y), new Vector2D(0, 0), 0, 0, "rectangle", isStatic);
+        rect.width = width;
+        rect.height = height;
+        return rect;
     }
 }

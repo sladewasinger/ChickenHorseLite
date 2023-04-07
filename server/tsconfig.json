@@ -1,7 +1,8 @@
 {
   "include": [
     "src",
-    "../shared/Input.ts"
+    "../shared/Input.ts",
+    "src/models/CustomBody.ts"
   ],
   "compilerOptions": {
     "baseUrl": "./src", /* Base directory to resolve non-absolute module names. */

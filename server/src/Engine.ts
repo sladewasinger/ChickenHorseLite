@@ -2,11 +2,12 @@ import Matter from "matter-js";
 import { Player } from "./models/Player.js";
 import { Input } from "../../shared/Input.js";
 import { SimpleBody } from "shared/SimpleBody.js";
-import { BodyMetaData } from "shared/BodyMetaData.js";
-import { Level, ShapeFactory } from "./levels/Level.js";
+import { Level } from "./levels/Level.js";
+import { ShapeFactory } from "./utilities/ShapeFactory.js";
 import { Server as SocketIOServer, Socket } from "socket.io";
 import { GameState } from "shared/GameState.js";
 import { ClientPlayer } from "shared/ClientPlayer.js";
+import { CustomBody } from "./models/CustomBody.js";
 
 export class Engine {
     public engine: Matter.Engine;
@@ -46,7 +47,7 @@ export class Engine {
         if (clientDelta > 1000 / this.clientUpdateFps) {
             const clientPlayers: ClientPlayer[] = [];
             for (const player of this.players) {
-                const pBody = this.engine.world.bodies.find((body) => body.id === player.bodyId);
+                const pBody = this.engine.world.bodies.find((body) => body.id === player.bodyId) as CustomBody;
                 if (!pBody) {
                     continue;
                 }
@@ -55,7 +56,8 @@ export class Engine {
                     name: player.name,
                     grounded: player.grounded,
                     jumpDebounce: player.jumpDebounce,
-                    body: this.getSimpleBodyFromBody(pBody),
+                    body: ShapeFactory.GetSimpleBodyFromBody(pBody),
+                    latestCommandId: player.latestCommandId,
                 };
                 clientPlayers.push(clientPlayer);
             }
@@ -85,37 +87,36 @@ export class Engine {
         }
     }
 
-    public getSimpleBodyFromBody(body: Matter.Body): SimpleBody {
-        return <SimpleBody>{
-            id: body.id,
-            position: { x: body.position.x, y: body.position.y },
-            velocity: { x: body.velocity.x, y: body.velocity.y },
-            angle: body.angle,
-            angularVelocity: body.angularVelocity,
-            type: (<any>body).simpleBodyType,
-            isStatic: body.isStatic,
-            label: body.label,
-            width: (<any>body).width,
-            height: (<any>body).height,
-            radius: (<any>body).radius,
-        };
-    }
-
     public getDynamicBodies(): SimpleBody[] {
         return this.engine.world.bodies
             .filter((body) => body.isStatic)
             .filter((body) => body.label !== 'player')
             .map((body) => {
-                return this.getSimpleBodyFromBody(body)
+                return ShapeFactory.GetSimpleBodyFromBody(body as CustomBody)
             });
     }
 
     public loadLevel(level: Level) {
-        const bodies = level.getBodies();
-        if (bodies.some((body) => !(<any>body).simpleBodyType)) {
+        const [startingZone, goal, ...bodies] = level.getBodies();
+
+        if (bodies.some((body) => body.shape === undefined)) {
             throw new Error("Body type is not defined");
         }
+
+        if (startingZone.label !== "startingZone") {
+            throw new Error("Starting zone is not defined");
+        }
+
+        if (goal.label !== "goal") {
+            throw new Error("Goal is not defined");
+        }
+
         Matter.World.add(this.engine.world, bodies);
+
+        startingZone.isSensor = true;
+        goal.isSensor = true;
+
+        Matter.World.add(this.engine.world, [startingZone, goal]);
     }
 
     public getPlayer(id: string) {
@@ -126,10 +127,9 @@ export class Engine {
         const newPlayer = new Player(id, name);
         this.players.push(newPlayer);
 
-        const playerBody = ShapeFactory.createCircle(200, 0, 20, false);
+        const playerBody = ShapeFactory.CreateCircle(200, 0, 20, false);
         playerBody.label = "player";
-        (<any>playerBody).isJumping = false;
-        (<any>playerBody).canJump = true;
+
         newPlayer.bodyId = playerBody.id;
         Matter.World.add(this.engine.world, playerBody);
 
@@ -140,7 +140,7 @@ export class Engine {
                 continue;
             }
 
-            const simpleBody = this.getSimpleBodyFromBody(body);
+            const simpleBody = ShapeFactory.GetSimpleBodyFromBody(body as CustomBody);
             simpleBodies.push(simpleBody);
         }
         this.io.to(newPlayer.id).emit("bodies", simpleBodies);
@@ -198,7 +198,8 @@ export class Engine {
         const rayCollisions = Matter.Query
             .ray(this.engine.world.bodies, body.position, { x: body.position.x, y: body.position.y + (<any>body).radius + 5 });
         const filteredCollisions = rayCollisions
-            .filter((collision) => (<any>collision).body.label !== "player");
+            .filter((collision) => (<any>collision).body.id !== player.bodyId)
+            .filter((collision) => (<any>collision).body.isSensor !== true);
 
         if (filteredCollisions.length > 0) {
             player.grounded = true;

@@ -1,4 +1,6 @@
-import { Level, ShapeFactory } from "./Level.js";
+import { Level } from "./Level.js";
+import { ShapeFactory } from "../utilities/ShapeFactory.js";
+import { SimpleBody } from "@/../../shared/SimpleBody.js";
 
 export class Level1 implements Level {
     name: string = "Level 1";
@@ -7,7 +9,7 @@ export class Level1 implements Level {
         const height = 800;
 
         // create ground
-        const ground = ShapeFactory.createRectangle(
+        const ground = ShapeFactory.CreateRectangle(
             width / 2,
             height - 25,
             width,
@@ -16,7 +18,7 @@ export class Level1 implements Level {
         );
 
         // create left wall
-        const leftWall = ShapeFactory.createRectangle(
+        const leftWall = ShapeFactory.CreateRectangle(
             0,
             height / 2,
             50,
@@ -25,7 +27,7 @@ export class Level1 implements Level {
         );
 
         // create right wall
-        const rightWall = ShapeFactory.createRectangle(
+        const rightWall = ShapeFactory.CreateRectangle(
             width,
             height / 2,
             50,
@@ -33,6 +35,26 @@ export class Level1 implements Level {
             true
         );
 
-        return [ground, leftWall, rightWall];
+        const startingZone = ShapeFactory.CreateRectangle(
+            100,
+            height - 100,
+            200,
+            200,
+            true
+        );
+        startingZone.label = "startingZone";
+        startingZone.fillColor = "blue";
+
+        const goal = ShapeFactory.CreateRectangle(
+            width - 100,
+            height - 100,
+            200,
+            200,
+            true
+        );
+        goal.label = "goal";
+        goal.fillColor = "red";
+
+        return [startingZone, goal, ground, leftWall, rightWall];
     }
 }

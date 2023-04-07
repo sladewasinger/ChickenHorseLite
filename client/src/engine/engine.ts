@@ -10,8 +10,8 @@ import { Vector2D } from "shared/math/Vector2D";
 import { Socket } from "socket.io-client";
 
 export class Engine {
-    socket: Socket | undefined;
     public static readonly VERSION = '0.0.1';
+    socket: Socket | undefined;
     pluginHandler: PluginHandler;
     fps: number = 60;
     matterEngine: Matter.Engine;
@@ -24,6 +24,8 @@ export class Engine {
     targetCameraPosition: Vector2D = new Vector2D(0, 0);
     jumpDebounce: boolean = false;
     maxDt: number = 1000 / 20;
+    public latestCommandId: number = 0;
+
 
     constructor(public renderer: Renderer) {
         console.log(`Engine version ${Engine.VERSION} started`);
@@ -32,32 +34,92 @@ export class Engine {
         this.matterEngine = Matter.Engine.create();
     }
 
+    handleGameState(gameState: GameState) {
+        if (gameState.frameNumber < this.gameState.frameNumber) {
+            console.error('Received old game state');
+            return;
+        }
+        if (gameState.frameNumber > this.gameState.frameNumber + 4) {
+            console.error('Dropped frames: ', gameState.frameNumber - this.gameState.frameNumber + 1);
+        }
+        const player = gameState.players.find(p => p.id === this.myPlayerId);
+        if (player) {
+            if (player.latestCommandId < this.latestCommandId) {
+                console.error('Server is behind client inputs. Skipping this update.');
+                return;
+            }
+            console.log('gameStateUpadted', player.latestCommandId);
+        }
+
+        for (const body of gameState.dynamicBodies) {
+            let b = this.matterEngine.world.bodies.find(b => b.id === body.id);
+            if (!b) {
+                const b = this.createBodyFromSimpleBody(body);
+                this.addBody(b);
+            } else {
+                Matter.Body.setPosition(b, body.position);
+                Matter.Body.setAngle(b, body.angle);
+                Matter.Body.setVelocity(b, body.velocity);
+                Matter.Body.setAngularVelocity(b, body.angularVelocity);
+            }
+        }
+
+        this.gameState = gameState;
+        for (const player of gameState.players) {
+            const body = this.matterEngine.world.bodies.find(b => b.id === player.body.id);
+            if (!body) {
+                const body = this.createBodyFromSimpleBody(player.body);
+                body.label = "player";
+                this.addBody(body);
+            } else {
+                const bodyPosition2D = new Vector2D(body.position.x, body.position.y);
+
+                if (Vector2D.subtract(player.body.position, bodyPosition2D).length() > 500) {
+                    Matter.Body.setPosition(body, player.body.position);
+                    console.log("Teleporting player", player.id);
+                } else {
+                    Matter.Body.setPosition(body, Vector2D.lerp(bodyPosition2D, player.body.position, 0.25));
+                }
+                Matter.Body.setAngle(body, player.body.angle);
+
+                // const bodyVelocity2D = new Vector2D(body.velocity.x, body.velocity.y);
+                // if (Vector2D.subtract(player.body.velocity, bodyVelocity2D).length() > 25) {
+                Matter.Body.setVelocity(body, player.body.velocity);
+                //     console.log("snapping player velocity", player.id);
+                // } else {
+                //     Matter.Body.setVelocity(body, Vector2D.lerp(bodyVelocity2D, player.body.velocity, 0.5));
+                // }
+                Matter.Body.setAngularVelocity(body, player.body.angularVelocity);
+            }
+        };
+    }
+
     public createBodyFromSimpleBody(simpleBody: SimpleBody) {
-        if (simpleBody.type === 'circle') {
+        const options = {
+            id: simpleBody.id,
+            angle: simpleBody.angle,
+            angularVelocity: simpleBody.angularVelocity,
+            velocity: simpleBody.velocity,
+            isStatic: simpleBody.isStatic,
+            label: simpleBody.label,
+            isSensor: simpleBody.isSensor,
+            fillColor: simpleBody.fillColor,
+            strokeColor: simpleBody.strokeColor
+        };
+
+        if (simpleBody.shape === 'circle') {
             if (!simpleBody.radius)
                 throw new Error('Radius not defined');
 
-            return Matter.Bodies.circle(simpleBody.position.x, simpleBody.position.y, simpleBody.radius, {
-                id: simpleBody.id,
-                angle: simpleBody.angle,
-                angularVelocity: simpleBody.angularVelocity,
-                velocity: simpleBody.velocity,
-                isStatic: simpleBody.isStatic,
-            });
-        } else if (simpleBody.type === 'rectangle') {
+            return Matter.Bodies.circle(simpleBody.position.x, simpleBody.position.y, simpleBody.radius, options);
+        } else if (simpleBody.shape === 'rectangle') {
             if (!simpleBody.width || !simpleBody.height)
                 throw new Error('Width or height not defined');
 
-            return Matter.Bodies.rectangle(simpleBody.position.x, simpleBody.position.y, simpleBody.width, simpleBody.height, {
-                id: simpleBody.id,
-                angle: simpleBody.angle,
-                angularVelocity: simpleBody.angularVelocity,
-                velocity: simpleBody.velocity,
-                isStatic: simpleBody.isStatic,
-            });
+            return Matter.Bodies.rectangle(simpleBody.position.x, simpleBody.position.y, simpleBody.width, simpleBody.height, options);
         }
 
-        throw new Error('Unknown body type: ' + simpleBody.type);
+        throw new Error('Unknown body type: ' + simpleBody.shape);
     }
 
     addBodies(bodies: Matter.Body[]) {
@@ -119,8 +181,25 @@ export class Engine {
     }
 
     handleKeyDown(key: string) {
+        const utcNow = new Date().getTime();
+
+        if (!this.input[key]) {
+            this.latestCommandId++;
+            this.sendEvent('keydown', { key: key, utcTime: utcNow, commandId: this.latestCommandId });
+            console.log('sent keydown', key, this.latestCommandId);
+        }
+
         this.input[key] = true;
-        this.sendEvent('keydown', key);
+    }
+
+    handleKeyUp(key: string) {
+        const utcNow = new Date().getTime();
+
+        if (this.input[key]) {
+            this.sendEvent('keyup', { key: key, utcTime: utcNow });
+        }
+
+        this.input[key] = false;
     }
 
     handleInput() {
@@ -161,7 +240,8 @@ export class Engine {
         const rayCollisions = Matter.Query
             .ray(this.matterEngine.world.bodies, body.position, { x: body.position.x, y: body.position.y + 25 });
         const filteredCollisions = rayCollisions
-            .filter((collision) => (<any>collision).body.label !== "player")
+            .filter((collision) => (<any>collision).body.id !== player.body.id)
+            .filter((collision) => (<any>collision).body.isSensor !== true)
             .filter((collision) => validIds.includes(collision.bodyA.id) && validIds.includes(collision.bodyB.id));
 
         if (filteredCollisions.length > 0) {

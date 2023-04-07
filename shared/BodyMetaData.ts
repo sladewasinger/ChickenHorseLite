@@ -1,7 +1,7 @@
-import { SimpleBodyType } from "./SimpleBody";
+import { SimpleBodyShape } from "./SimpleBody";
 
 export interface BodyMetaData {
-    type: SimpleBodyType;
+    type: SimpleBodyShape;
     canJump: boolean;
     isJumping: boolean;
 }

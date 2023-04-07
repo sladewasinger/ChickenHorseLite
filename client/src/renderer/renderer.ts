@@ -4,6 +4,7 @@ import { Engine } from "../engine/engine";
 import { Mouse } from "./mouse";
 import { Rectangle } from "../models/Rectangle";
 import { Vector2D } from "shared/math/Vector2D";
+import { CustomBody } from "models/CustomBody";
 
 export class Renderer {
     camera: Camera;
@@ -133,10 +134,16 @@ export class Renderer {
                 ctx.lineTo(vertices[j].x - offset.x, vertices[j].y - offset.y);
             }
 
+            const customBody = body as CustomBody;
+
             ctx.lineTo(vertices[0].x - offset.x, vertices[0].y - offset.y);
             ctx.lineWidth = 1;
-            ctx.strokeStyle = '#000000';
-            ctx.fillStyle = '#FF0000';
+            if (customBody.fillColor) {
+                ctx.fillStyle = customBody.fillColor;
+            }
+            if (customBody.strokeColor) {
+                ctx.strokeStyle = customBody.strokeColor;
+            }
             ctx.fill();
             ctx.stroke();
         }

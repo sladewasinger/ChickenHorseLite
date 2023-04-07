@@ -7,4 +7,5 @@ export interface ClientPlayer {
     grounded: boolean;
     jumpDebounce: boolean;
     body: SimpleBody;
+    latestCommandId: number;
 }

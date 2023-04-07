@@ -11,11 +11,12 @@ import Matter from 'matter-js';
 import { MousePan } from './plugins/MousePan';
 import { ClientPlayer } from 'shared/ClientPlayer';
 import { Vector2D } from 'shared/math/Vector2D';
+import { i } from 'mathjs';
 
 class Client {
     private socket: Socket | undefined;
-    private engine: Engine;
-    private renderer: Renderer;
+    private engine: Engine | undefined;
+    private renderer: Renderer | undefined;
     private canvas: HTMLCanvasElement;
 
     private nameForm: NameForm;
@@ -26,10 +27,6 @@ class Client {
         if (!this.canvas) {
             throw new Error('Canvas not found');
         }
-
-        this.renderer = new Renderer(this.canvas);
-        this.engine = new Engine(this.renderer);
-        this.engine.addPlugin(new MousePan(this.engine, this.renderer));
 
         this.nameForm = new NameForm((value) => {
             this.sendEvent('registerPlayer', value);
@@ -49,6 +46,8 @@ class Client {
     public connect(): void {
         this.socket = io(this.serverUrl);
 
+        console.log("Renderer started", this.renderer);
+
         this.socket.on("connect", () => {
             console.log("Connected to server");
 
@@ -56,6 +55,13 @@ class Client {
             this.socket!.emit("event", { data: "Hello from client" });
             this.loadingIcon.hide();
             this.nameForm.show();
+
+            this.renderer = new Renderer(this.canvas);
+            this.engine = new Engine(this.renderer);
+            this.engine.addPlugin(new MousePan(this.engine, this.renderer));
+
+            this.engine.start(this.socket!);
+            this.renderer.start(this.engine);
         });
 
         this.socket.on("event", (data: any) => {
@@ -63,65 +69,21 @@ class Client {
         });
 
         this.socket.on("disconnect", () => {
-            console.log("Disconnected from server");
-            this.nameForm.hide();
-            this.loadingIcon.show();
+            this.disconnect();
         });
 
         this.socket.on('gameState', (gameState: GameState) => {
-            if (gameState.frameNumber < this.engine.gameState.frameNumber) {
-                console.error('Received old game state');
+            if (!this.engine) {
                 return;
             }
-            if (gameState.frameNumber > this.engine.gameState.frameNumber + 4) {
-                console.error('Dropped frames: ', gameState.frameNumber - this.engine.gameState.frameNumber + 1);
-            }
-            for (const body of gameState.dynamicBodies) {
-                let b = this.engine.matterEngine.world.bodies.find(b => b.id === body.id);
-                if (!b) {
-                    const b = this.engine.createBodyFromSimpleBody(body);
-                    this.engine.addBody(b);
-                } else {
-                    Matter.Body.setPosition(b, body.position);
-                    Matter.Body.setAngle(b, body.angle);
-                    Matter.Body.setVelocity(b, body.velocity);
-                    Matter.Body.setAngularVelocity(b, body.angularVelocity);
-                }
-            }
 
-            this.engine.gameState = gameState;
-            for (const player of gameState.players) {
-                const body = this.engine.matterEngine.world.bodies.find(b => b.id === player.body.id);
-                if (!body) {
-                    const body = this.engine.createBodyFromSimpleBody(player.body);
-                    body.label = "player";
-                    this.engine.addBody(body);
-                } else {
-                    const bodyPosition2D = new Vector2D(body.position.x, body.position.y);
-
-
-
-                    if (Vector2D.subtract(player.body.position, bodyPosition2D).length() > 500) {
-                        Matter.Body.setPosition(body, player.body.position);
-                        console.log("Teleporting player", player.id);
-                    } else {
-                        Matter.Body.setPosition(body, Vector2D.lerp(bodyPosition2D, player.body.position, 0.25));
-                    }
-                    Matter.Body.setAngle(body, player.body.angle);
-
-                    // const bodyVelocity2D = new Vector2D(body.velocity.x, body.velocity.y);
-                    // if (Vector2D.subtract(player.body.velocity, bodyVelocity2D).length() > 25) {
-                    Matter.Body.setVelocity(body, player.body.velocity);
-                    //     console.log("snapping player velocity", player.id);
-                    // } else {
-                    //     Matter.Body.setVelocity(body, Vector2D.lerp(bodyVelocity2D, player.body.velocity, 0.5));
-                    // }
-                    Matter.Body.setAngularVelocity(body, player.body.angularVelocity);
-                }
-            };
+            this.engine.handleGameState(gameState);
         });
 
         this.socket.on("bodies", (simpleBodies: SimpleBody[]) => {
+            if (!this.engine) {
+                return;
+            }
             console.log("Received bodies:", simpleBodies);
 
             for (const simpleBody of simpleBodies) {
@@ -129,12 +91,16 @@ class Client {
                 if (b) {
                     continue;
                 }
+                console.log(simpleBody);
                 const body = this.engine.createBodyFromSimpleBody(simpleBody);
                 this.engine.addBodies([body]);
             }
         });
 
         this.socket.on("removeBodies", (ids: number[]) => {
+            if (!this.engine) {
+                return;
+            }
             console.log("Received remove bodies:", ids);
             for (const id of ids) {
                 const body = this.engine.matterEngine.world.bodies.find(b => b.id === id);
@@ -145,13 +111,13 @@ class Client {
         });
 
         this.socket.on('myPlayer', (id: string, bodyId: number) => {
+            if (!this.engine) {
+                return;
+            }
             console.log("Received my player id:", id, bodyId);
             this.engine.myPlayerId = id;
             this.engine.myPlayerBodyId = bodyId;
         });
-
-        this.engine.start(this.socket);
-        this.renderer.start(this.engine);
     }
 
     public sendEvent(event: string, data: any): void {
@@ -161,31 +127,44 @@ class Client {
     }
 
     public disconnect(): void {
-        if (this.socket) {
-            this.socket.disconnect();
-        }
+        console.log("Disconnected from server");
+        this.nameForm.hide();
+        this.loadingIcon.show();
+
+        // if (this.socket) {
+        //     this.socket.disconnect();
+        // }
+
+        delete this.renderer;
+        delete this.engine;
     }
 
     private handleKeyDown(e: KeyboardEvent): void {
-        const body = this.engine.matterEngine.world.bodies.find(b => b.id === this.engine.myPlayerBodyId);
+        if (!this.engine) {
+            return;
+        }
+        const body = this.engine.matterEngine.world.bodies.find(b => b.id === this.engine!.myPlayerBodyId);
         if (!body) {
             return;
         }
 
+        const utcNow = new Date().getTime();
+        console.log("keydown", e.key, utcNow);
         this.engine.handleKeyDown(e.key);
     }
 
     private handleKeyUp(e: KeyboardEvent): void {
-        const body = this.engine.matterEngine.world.bodies.find(b => b.id === this.engine.myPlayerBodyId);
+        if (!this.engine) {
+            return;
+        }
+        const body = this.engine.matterEngine.world.bodies.find(b => b.id === this.engine!.myPlayerBodyId);
         if (!body) {
             return;
         }
 
-        this.sendEvent('keyup', e.key);
-
-        // Simulate server delay before "intepolating" the keyup
-
-        this.engine.input[e.key] = false;
+        const utcNow = new Date().getTime();
+        console.log("keyup", e.key, utcNow);
+        this.engine.handleKeyUp(e.key);
     }
 }
 
