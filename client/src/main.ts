@@ -152,8 +152,8 @@ class Client {
             return;
         }
 
-        const utcNow = new Date().getTime();
-        console.log("keydown", e.key, utcNow);
+        // const utcNow = new Date().getTime();
+        // console.log("keydown", e.key, utcNow);
         this.engine.handleKeyDown(e.key);
     }
 
@@ -170,9 +170,8 @@ class Client {
             return;
         }
 
-
-        const utcNow = new Date().getTime();
-        console.log("keyup", e.key, utcNow);
+        // const utcNow = new Date().getTime();
+        // console.log("keyup", e.key, utcNow);
         this.engine.handleKeyUp(e.key);
     }
 

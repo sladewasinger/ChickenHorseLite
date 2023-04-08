@@ -17,6 +17,7 @@ export class Engine {
     fps: number = 60;
     matterEngine: Matter.Engine;
     lastUpdated: number = 0;
+    lastUpdatedUTC: number = 0;
     myPlayerId: string | undefined;
     myPlayerBodyId: number | undefined;
     input: Input = new Input();
@@ -44,6 +45,13 @@ export class Engine {
         if (gameState.frameNumber > this.gameState.frameNumber + 4) {
             console.error('Dropped frames: ', gameState.frameNumber - this.gameState.frameNumber + 1);
         }
+
+
+        const dt = gameState.timeStampUTC - this.lastUpdatedUTC;
+        if (dt > 100) {
+            console.error("Server is behind client by: ", dt, " ms")
+        }
+
         const player = gameState.players.find(p => p.id === this.myPlayerId);
         if (player) {
             if (this.debugMode)
@@ -75,8 +83,6 @@ export class Engine {
             }
         }
 
-        const utcTime = new Date().getTime();
-        const dt = utcTime - gameState.timeStampUTC;
 
         for (const player of gameState.players) {
             const clientBody = this.matterEngine.world.bodies.find(b => b.id === player.body.id);
@@ -91,17 +97,14 @@ export class Engine {
 
                 // Interpolate playerPosition with velocity to account for network latency
                 const serverVelocity = new Vector2D(player.body.velocity.x, player.body.velocity.y);
-                console.log("playerVelocity: ", serverVelocity);
-                console.log("clientVelocity", clientBody.velocity);
                 const playerPositionInterpolated = Vector2D.add(serverPosition2D, Vector2D.multiply(serverVelocity, dt / 1000));
 
-                console.log("diff between interpolated and actual position: ", Vector2D.subtract(serverPosition2D, playerPositionInterpolated).length(), " pixels");
                 if (this.debugMode)
                     this.renderer.renderGhostPlayerInterpolated(playerPositionInterpolated);
                 else
                     this.renderer.renderGhostPlayerInterpolated(undefined);
 
-                if (Vector2D.subtract(serverPosition2D, clientPosition2D).length() > 50) {
+                if (Vector2D.subtract(serverPosition2D, clientPosition2D).length() > 75) {
                     Matter.Body.setPosition(clientBody, serverPosition2D);
                     console.log("Teleporting player", player.id);
                 } else {
@@ -116,6 +119,9 @@ export class Engine {
                 Matter.Body.setAngularVelocity(clientBody, player.body.angularVelocity);
             }
         };
+
+        this.lastUpdatedUTC = new Date().getTime();
+
     }
 
     public createBodyFromSimpleBody(simpleBody: SimpleBody) {
@@ -257,11 +263,11 @@ export class Engine {
             moveVector.x += 1;
         }
         if (moveVector.length() > 0 && !this.inputDebounce) {
-            // this.inputDebounce = true;
-            //setTimeout(() => {
-            this.inputDebounce = false;
-            Matter.Body.setVelocity(body, { x: moveVector.x * 5, y: body.velocity.y });
-            //}, 5);
+            this.inputDebounce = true;
+            setTimeout(() => {
+                this.inputDebounce = false;
+                Matter.Body.setVelocity(body, { x: moveVector.x * 5, y: body.velocity.y });
+            }, 10);
         }
     }
 

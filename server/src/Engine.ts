@@ -50,32 +50,7 @@ export class Engine {
         Matter.Engine.update(this.engine, gameDelta);
 
         if (clientDelta > 1000 / this.clientUpdateFps) {
-            const clientPlayers: ClientPlayer[] = [];
-            for (const player of this.players) {
-                const pBody = this.engine.world.bodies.find((body) => body.id === player.bodyId) as CustomBody;
-                if (!pBody) {
-                    continue;
-                }
-                const clientPlayer = <ClientPlayer>{
-                    id: player.id,
-                    name: player.name,
-                    grounded: player.grounded,
-                    jumpDebounce: player.jumpDebounce,
-                    jumpReleased: player.jumpReleased,
-                    hasDoubleJump: player.hasDoubleJump,
-                    body: ShapeFactory.GetSimpleBodyFromBody(pBody),
-                    latestCommandId: player.latestCommandId,
-                };
-                clientPlayers.push(clientPlayer);
-            }
-            const gameState = <GameState>{
-                frameNumber: this.frameNumber,
-                players: clientPlayers,
-                dynamicBodies: this.getDynamicBodies(),
-                timeStampUTC: new Date().getTime(),
-            };
-            this.io.volatile.emit("gameState", gameState); // volatile = don't buffer
-            this.lastClientUpdate = now;
+            this.sendClientUpdate();
         }
 
         this.lastUpdated = now;
@@ -83,6 +58,36 @@ export class Engine {
         setTimeout(() => {
             this.update();
         }, 1000 / this.fps);
+    }
+
+    private sendClientUpdate() {
+        const now = Date.now();
+        const clientPlayers: ClientPlayer[] = [];
+        for (const player of this.players) {
+            const pBody = this.engine.world.bodies.find((body) => body.id === player.bodyId) as CustomBody;
+            if (!pBody) {
+                continue;
+            }
+            const clientPlayer = <ClientPlayer>{
+                id: player.id,
+                name: player.name,
+                grounded: player.grounded,
+                jumpDebounce: player.jumpDebounce,
+                jumpReleased: player.jumpReleased,
+                hasDoubleJump: player.hasDoubleJump,
+                body: ShapeFactory.GetSimpleBodyFromBody(pBody),
+                latestCommandId: player.latestCommandId,
+            };
+            clientPlayers.push(clientPlayer);
+        }
+        const gameState = <GameState>{
+            frameNumber: this.frameNumber,
+            players: clientPlayers,
+            dynamicBodies: this.getDynamicBodies(),
+            timeStampUTC: new Date().getTime(),
+        };
+        this.io.volatile.emit("gameState", gameState); // volatile = don't buffer
+        this.lastClientUpdate = now;
     }
 
     handleFallThroughFloor(player: Player) {
@@ -242,21 +247,25 @@ export class Engine {
 
 
                     const dt = new Date().getTime() - input[' '].time;
-                    const baseVelocity = { ...body.velocity };
-                    baseVelocity.y = -10;
+                    // const baseVelocity = { ...body.velocity };
+                    // baseVelocity.y = -10;
 
-                    // // Apply gravity
-                    const gravity = this.engine.gravity;
-                    baseVelocity.y += gravity.y * dt / 1000;
+                    // // // Apply gravity
+                    // const gravity = this.engine.gravity;
+                    // baseVelocity.y += gravity.y * dt / 1000;
 
 
-                    const xAdjustment = baseVelocity.x * dt / 1000;
-                    const yAdjustment = (baseVelocity.y * (dt / 1000));
-                    console.log('basevelocity.y', baseVelocity.y);
-                    console.log('y adjustment', yAdjustment);
+                    // const xAdjustment = baseVelocity.x * dt / 1000;
+                    // const yAdjustment = (baseVelocity.y * (dt / 1000));
+                    // console.log('basevelocity.y', baseVelocity.y);
+                    // console.log('y adjustment', yAdjustment);
 
                     Matter.Body.setVelocity(body, { x: body.velocity.x, y: -10 });
-                    Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y + yAdjustment });
+                    console.log("moving forward", dt, "ms");
+                    Matter.Engine.update(this.engine, dt);
+                    this.sendClientUpdate();
+                    //setTimeout(() => this.update(), 0);
+                    //Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y + yAdjustment });
                 } else if (player.hasDoubleJump) {
                     player.jumpDebounce = true;
                     player.hasDoubleJump = false;
@@ -272,23 +281,29 @@ export class Engine {
 
         const moveVector = new Vector2D(0, 0);
         const speed = 5;
-        let dt = new Date().getTime();
+        const now = new Date().getTime();
+        let dt = now;
+
         if (input['a']?.pressed) {
             moveVector.x -= 1 * speed;
             dt = dt - input['a'].time;
+            input['a'].time = now;
         }
         if (input['d']?.pressed) {
             moveVector.x += 1 * speed;
             dt = dt - input['d'].time;
+            input['d'].time = now;
         }
         if (moveVector.length() > 0) {
-            if (Math.abs(moveVector.x - body.velocity.x) >= speed * 0.5) { // switched directions?
-                const xAdjustment = moveVector.x * dt / 1000;
-                Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y });
-                console.log('xAjustment', xAdjustment);
-            }
+            // if (Math.abs(moveVector.x - body.velocity.x) >= speed * 0.5) { // switched directions?
+            //     const xAdjustment = moveVector.x * dt / 1000;
+            //     Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y });
+            //     console.log('xAjustment', xAdjustment);
+            // }
 
             Matter.Body.setVelocity(body, { x: moveVector.x, y: body.velocity.y });
+            //Matter.Engine.update(this.engine, dt);
+            //this.sendClientUpdate();
         }
     }
 
