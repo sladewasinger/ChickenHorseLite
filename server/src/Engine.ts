@@ -262,7 +262,7 @@ export class Engine {
 
                     Matter.Body.setVelocity(body, { x: body.velocity.x, y: -10 });
                     console.log("moving forward", dt, "ms");
-                    Matter.Engine.update(this.engine, dt);
+                    //Matter.Engine.update(this.engine, dt);
                     this.sendClientUpdate();
                     //setTimeout(() => this.update(), 0);
                     //Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y + yAdjustment });
