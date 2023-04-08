@@ -47,7 +47,8 @@ export class Engine {
         }
 
 
-        const dt = gameState.timeStampUTC - this.lastUpdatedUTC;
+        this.lastUpdatedUTC = new Date().getTime();
+        const dt = this.lastUpdatedUTC - gameState.timeStampUTC;
         if (dt > 100) {
             console.error("Server is behind client by: ", dt, " ms")
         }
@@ -119,9 +120,6 @@ export class Engine {
                 Matter.Body.setAngularVelocity(clientBody, player.body.angularVelocity);
             }
         };
-
-        this.lastUpdatedUTC = new Date().getTime();
-
     }
 
     public createBodyFromSimpleBody(simpleBody: SimpleBody) {
