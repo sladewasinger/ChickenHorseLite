@@ -249,7 +249,7 @@ export class Engine {
 
 
                     const xAdjustment = baseVelocity.x * dt / 1000;
-                    const yAdjustment = (baseVelocity.y * (dt / 1000)) * 50;
+                    const yAdjustment = (baseVelocity.y * (dt / 1000));
                     console.log('basevelocity.y', baseVelocity.y);
                     console.log('y adjustment', yAdjustment);
 
