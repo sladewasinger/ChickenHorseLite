@@ -62,6 +62,7 @@ export class Engine {
                     grounded: player.grounded,
                     jumpDebounce: player.jumpDebounce,
                     jumpReleased: player.jumpReleased,
+                    hasDoubleJump: player.hasDoubleJump,
                     body: ShapeFactory.GetSimpleBodyFromBody(pBody),
                     latestCommandId: player.latestCommandId,
                 };
@@ -70,7 +71,8 @@ export class Engine {
             const gameState = <GameState>{
                 frameNumber: this.frameNumber,
                 players: clientPlayers,
-                dynamicBodies: this.getDynamicBodies().filter((body) => !body.isStatic),
+                dynamicBodies: this.getDynamicBodies(),
+                timeStampUTC: new Date().getTime(),
             };
             this.io.volatile.emit("gameState", gameState); // volatile = don't buffer
             this.lastClientUpdate = now;
@@ -253,7 +255,7 @@ export class Engine {
                     console.log('basevelocity.y', baseVelocity.y);
                     console.log('y adjustment', yAdjustment);
 
-                    Matter.Body.setVelocity(body, { x: body.velocity.x, y: baseVelocity.y });
+                    Matter.Body.setVelocity(body, { x: body.velocity.x, y: -10 });
                     Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y + yAdjustment });
                 } else if (player.hasDoubleJump) {
                     player.jumpDebounce = true;
@@ -269,14 +271,24 @@ export class Engine {
         }
 
         const moveVector = new Vector2D(0, 0);
+        const speed = 5;
+        let dt = new Date().getTime();
         if (input['a']?.pressed) {
-            moveVector.x -= 1;
+            moveVector.x -= 1 * speed;
+            dt = dt - input['a'].time;
         }
         if (input['d']?.pressed) {
-            moveVector.x += 1;
+            moveVector.x += 1 * speed;
+            dt = dt - input['d'].time;
         }
         if (moveVector.length() > 0) {
-            Matter.Body.setVelocity(body, { x: moveVector.x * 5, y: body.velocity.y });
+            if (Math.abs(moveVector.x - body.velocity.x) >= speed * 0.5) { // switched directions?
+                const xAdjustment = moveVector.x * dt / 1000;
+                Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y });
+                console.log('xAjustment', xAdjustment);
+            }
+
+            Matter.Body.setVelocity(body, { x: moveVector.x, y: body.velocity.y });
         }
     }
 
@@ -295,6 +307,7 @@ export class Engine {
 
         if (filteredCollisions.length > 0) {
             player.grounded = true;
+            player.hasDoubleJump = true;
         } else {
             player.grounded = false;
         }

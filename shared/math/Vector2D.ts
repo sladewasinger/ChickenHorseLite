@@ -1,5 +1,6 @@
 
 export class Vector2D {
+
     x: number;
     y: number;
 
@@ -17,6 +18,10 @@ export class Vector2D {
         return newV;
     }
 
+    static add(v1: Vector2D, v2: any) {
+        return v1.add(v2);
+    }
+
     public subtract(v: Vector2D) {
         const newV = new Vector2D(this.x - v.x, this.y - v.y);
         return newV;
@@ -27,9 +32,14 @@ export class Vector2D {
         return newV;
     }
 
+
     multiply(n: number) {
         const newV = new Vector2D(this.x * n, this.y * n);
         return newV;
+    }
+
+    static multiply(v1: Vector2D, v2: number): any {
+        return v1.multiply(v2);
     }
 
     lerp(pos: Vector2D, lerp: number) {

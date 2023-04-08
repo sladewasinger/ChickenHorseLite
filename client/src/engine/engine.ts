@@ -27,6 +27,7 @@ export class Engine {
     maxDt: number = 1000 / 20;
     latestCommandId: number = 0;
     inputDebounce: boolean = false;
+    debugMode: boolean = false;
 
     constructor(public renderer: Renderer) {
         console.log(`Engine version ${Engine.VERSION} started`);
@@ -45,13 +46,18 @@ export class Engine {
         }
         const player = gameState.players.find(p => p.id === this.myPlayerId);
         if (player) {
-            //this.renderer.renderGhostPlayer(player);
+            if (this.debugMode)
+                this.renderer.renderGhostPlayer(player);
+            else
+                this.renderer.renderGhostPlayer(undefined);
 
             if (player.latestCommandId < this.latestCommandId) {
-                console.error('Server is behind client inputs. Skipping this update.');
+                if (this.debugMode)
+                    console.error('Server is behind client inputs. Skipping this update.');
                 return;
             }
-            console.log('gameStateUpadted', player.latestCommandId);
+            if (this.debugMode)
+                console.log('gameStateUpadted', player.latestCommandId);
         }
 
         this.gameState = gameState;
@@ -69,30 +75,45 @@ export class Engine {
             }
         }
 
+        const utcTime = new Date().getTime();
+        const dt = utcTime - gameState.timeStampUTC;
+
         for (const player of gameState.players) {
-            const body = this.matterEngine.world.bodies.find(b => b.id === player.body.id);
-            if (!body) {
+            const clientBody = this.matterEngine.world.bodies.find(b => b.id === player.body.id);
+            if (!clientBody) {
                 const body = this.createBodyFromSimpleBody(player.body);
                 body.label = "player";
 
                 this.addBody(body);
             } else {
-                const bodyPosition2D = new Vector2D(body.position.x, body.position.y);
+                const serverPosition2D = new Vector2D(player.body.position.x, player.body.position.y);
+                const clientPosition2D = new Vector2D(clientBody.position.x, clientBody.position.y);
 
-                if (Vector2D.subtract(player.body.position, bodyPosition2D).length() > 100) {
-                    Matter.Body.setPosition(body, player.body.position);
+                // Interpolate playerPosition with velocity to account for network latency
+                const serverVelocity = new Vector2D(player.body.velocity.x, player.body.velocity.y);
+                console.log("playerVelocity: ", serverVelocity);
+                console.log("clientVelocity", clientBody.velocity);
+                const playerPositionInterpolated = Vector2D.add(serverPosition2D, Vector2D.multiply(serverVelocity, dt / 1000));
+
+                console.log("diff between interpolated and actual position: ", Vector2D.subtract(serverPosition2D, playerPositionInterpolated).length(), " pixels");
+                if (this.debugMode)
+                    this.renderer.renderGhostPlayerInterpolated(playerPositionInterpolated);
+                else
+                    this.renderer.renderGhostPlayerInterpolated(undefined);
+
+                if (Vector2D.subtract(serverPosition2D, clientPosition2D).length() > 50) {
+                    Matter.Body.setPosition(clientBody, serverPosition2D);
                     console.log("Teleporting player", player.id);
                 } else {
-                    Matter.Body.setPosition(body, Vector2D.lerp(bodyPosition2D, player.body.position, 0.25));
+                    Matter.Body.setPosition(clientBody, Vector2D.lerp(clientPosition2D, serverPosition2D, 0.25));
                 }
-                //Matter.Body.setPosition(body, player.body.position);
 
                 // const bodyVelocity2D = new Vector2D(body.velocity.x, body.velocity.y);
                 // const velocityLerpValue = 0.1;
                 //Matter.Body.setVelocity(body, Vector2D.lerp(bodyVelocity2D, player.body.velocity, velocityLerpValue));
-                Matter.Body.setVelocity(body, player.body.velocity);
-                Matter.Body.setAngle(body, player.body.angle);
-                Matter.Body.setAngularVelocity(body, player.body.angularVelocity);
+                Matter.Body.setVelocity(clientBody, player.body.velocity);
+                Matter.Body.setAngle(clientBody, player.body.angle);
+                Matter.Body.setAngularVelocity(clientBody, player.body.angularVelocity);
             }
         };
     }
@@ -194,6 +215,10 @@ export class Engine {
             this.sendEvent('keydown', { key: key, utcTime: utcNow, commandId: this.latestCommandId });
         }
 
+        if (key == 'i') {
+            this.debugMode = !this.debugMode;
+        }
+
         this.input[key] = { pressed: true, time: utcNow };
     }
 
@@ -214,8 +239,14 @@ export class Engine {
             return;
         }
 
-        if (this.input[' ']?.pressed && this.myPlayer.grounded && this.myPlayer.jumpReleased) {
-            Matter.Body.setVelocity(body, { x: body.velocity.x, y: -10 });
+        if (this.input[' ']?.pressed && this.myPlayer.jumpReleased) {
+            if (this.myPlayer.grounded) {
+                this.myPlayer.grounded = false;
+                Matter.Body.setVelocity(body, { x: body.velocity.x, y: -10 });
+            } else if (this.myPlayer.hasDoubleJump) {
+                this.myPlayer.hasDoubleJump = false;
+                Matter.Body.setVelocity(body, { x: body.velocity.x, y: -10 });
+            }
         }
 
         const moveVector = new Vector2D(0, 0);
@@ -226,11 +257,11 @@ export class Engine {
             moveVector.x += 1;
         }
         if (moveVector.length() > 0 && !this.inputDebounce) {
-            this.inputDebounce = true;
-            setTimeout(() => {
-                this.inputDebounce = false;
-                Matter.Body.setVelocity(body, { x: moveVector.x * 5, y: body.velocity.y });
-            }, 5);
+            // this.inputDebounce = true;
+            //setTimeout(() => {
+            this.inputDebounce = false;
+            Matter.Body.setVelocity(body, { x: moveVector.x * 5, y: body.velocity.y });
+            //}, 5);
         }
     }
 

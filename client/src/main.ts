@@ -178,7 +178,7 @@ class Client {
 
 
     private validateKey(key: string) {
-        const validKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d", " "];
+        const validKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d", " ", "i"];
 
         if (!validKeys.includes(key)) {
             return false;
