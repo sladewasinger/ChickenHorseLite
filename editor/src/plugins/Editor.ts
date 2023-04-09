@@ -27,6 +27,14 @@ export class Editor implements Plugin {
         this.mouse.onMouse1Up.on(() => this.onMouse1Up());
         this.mouse.onMouse3Up.on(() => this.onMouse3Up());
         this.mouse.onMouseMove.on(() => this.onMouseMove());
+        window.addEventListener('keydown', (e) => this.onKeyDown(e));
+    }
+
+    onKeyDown(e: KeyboardEvent): any {
+        if (e.key === 'g') {
+            this.gridSize = this.gridSize === 10 ? 50 : 10;
+        }
+
     }
 
     snapToGrid(pos: Vector2D) {
