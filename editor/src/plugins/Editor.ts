@@ -110,6 +110,14 @@ export class Editor implements Plugin {
             return;
 
         if (this.box) {
+            if (this.box.width < 0) {
+                this.box.position.x += this.box.width;
+                this.box.width = Math.abs(this.box.width);
+            }
+            if (this.box.height < 0) {
+                this.box.position.y += this.box.height;
+                this.box.height = Math.abs(this.box.height);
+            }
             const body = Matter.Bodies.rectangle(
                 this.box.position.x + this.box.width / 2,
                 this.box.position.y + this.box.height / 2,
@@ -125,7 +133,6 @@ export class Editor implements Plugin {
             return;
 
         let pos = this.renderer.screenToWorld(new Vector2D(this.mouse.x, this.mouse.y));
-        pos = this.snapToGrid(pos);
 
         let bodies = Matter.Query.point(this.engine.matterEngine.world.bodies, pos);
         if (bodies.length > 0) {
