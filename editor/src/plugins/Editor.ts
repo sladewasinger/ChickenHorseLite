@@ -49,7 +49,7 @@ export class Editor implements Plugin {
             const bodies = Matter.Query.point(this.engine.matterEngine.world.bodies, mousePos);
             if (bodies.length > 0) {
                 const body = bodies[0] as CustomBody;
-                body.killOnContact = true;
+                body.killOnContact = !body.killOnContact;
             }
         }
     }
