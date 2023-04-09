@@ -6,6 +6,7 @@ import { Renderer } from "../renderer/renderer";
 import { Rectangle } from "../models/Rectangle";
 import { Vector2D } from "../math/Vector2D";
 import { isNull } from "mathjs";
+import { CustomBody } from "./CustomBody";
 
 export class Editor implements Plugin {
     engine: Engine;
@@ -35,6 +36,22 @@ export class Editor implements Plugin {
             this.gridSize = this.gridSize === 10 ? 50 : 10;
         }
 
+        if (e.key === 'd') {
+            const mousePos = this.renderer.screenToWorld(new Vector2D(this.mouse.x, this.mouse.y));
+            const bodies = Matter.Query.point(this.engine.matterEngine.world.bodies, mousePos);
+            if (bodies.length > 0) {
+                Matter.World.remove(this.engine.matterEngine.world, bodies[0]);
+            }
+        }
+
+        if (e.key === 't') {
+            const mousePos = this.renderer.screenToWorld(new Vector2D(this.mouse.x, this.mouse.y));
+            const bodies = Matter.Query.point(this.engine.matterEngine.world.bodies, mousePos);
+            if (bodies.length > 0) {
+                const body = bodies[0] as CustomBody;
+                body.killOnContact = true;
+            }
+        }
     }
 
     snapToGrid(pos: Vector2D) {

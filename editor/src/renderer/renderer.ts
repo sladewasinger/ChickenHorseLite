@@ -5,6 +5,7 @@ import { Mouse } from "./mouse";
 import { Rectangle } from "../models/Rectangle";
 import { Vector2D } from "../math/Vector2D";
 import { Editor } from "../plugins/Editor";
+import { CustomBody } from "../plugins/CustomBody";
 
 export class Renderer {
     camera: Camera;
@@ -100,8 +101,7 @@ export class Renderer {
         }
 
         for (const body of bodies) {
-            const offset = this.camera.position;
-
+            let customBody = body as CustomBody;
             const vertices = body.vertices;
 
             ctx.beginPath();
@@ -114,7 +114,11 @@ export class Renderer {
             ctx.lineTo(vertices[0].x, vertices[0].y);
             ctx.lineWidth = 1;
             ctx.strokeStyle = '#000000';
-            ctx.fillStyle = '#333333';
+            if (customBody.killOnContact) {
+                ctx.fillStyle = '#ff0000';
+            } else {
+                ctx.fillStyle = '#333333';
+            }
             ctx.fill();
             ctx.stroke();
         }
