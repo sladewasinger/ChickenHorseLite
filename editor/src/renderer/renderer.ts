@@ -4,6 +4,7 @@ import { Engine } from "../engine/engine";
 import { Mouse } from "./mouse";
 import { Rectangle } from "../models/Rectangle";
 import { Vector2D } from "../math/Vector2D";
+import { Editor } from "../plugins/Editor";
 
 export class Renderer {
     camera: Camera;
@@ -90,24 +91,13 @@ export class Renderer {
         this.camera.position.y += y;
     }
 
-    start(engine: Engine) {
-        window.requestAnimationFrame(() => this.render(engine.matterEngine));
-    }
-
-    private render(engine: Matter.Engine) {
+    public render(engine: Matter.Engine) {
         const bodies = Matter.Composite.allBodies(engine.world);
 
         const ctx = this.canvas.getContext('2d');
         if (!ctx) {
             throw new Error('Canvas context not found');
         }
-
-        // Clear the screen:
-        ctx.save();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.scale(1, 1);
-        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        ctx.restore();
 
         for (const body of bodies) {
             const offset = this.camera.position;
@@ -124,38 +114,88 @@ export class Renderer {
             ctx.lineTo(vertices[0].x, vertices[0].y);
             ctx.lineWidth = 1;
             ctx.strokeStyle = '#000000';
-            ctx.fillStyle = '#FF0000';
+            ctx.fillStyle = '#333333';
             ctx.fill();
             ctx.stroke();
         }
-
-        for (const rect of this.rectangles) {
-            const offset = this.camera.position;
-
-            ctx.beginPath();
-            ctx.rect(rect.position.x, rect.position.y, rect.width, rect.height);
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = '#000000';
-            ctx.fillStyle = rect.fillColor;
-            ctx.fill();
-            ctx.stroke();
-        }
-
-        window.requestAnimationFrame(() => this.render(engine));
     }
 
-    renderRectangle(box: Rectangle) {
-        if (!this.rectangles.includes(box)) {
-            this.rectangles.push(box);
-        } else {
-            const index = this.rectangles.indexOf(box);
-            this.rectangles[index] = box;
+    public clearScreen() {
+        const ctx = this.canvas.getContext('2d');
+        if (!ctx) {
+            throw new Error('Canvas context not found');
         }
+
+        // Clear the screen:
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(1, 1);
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        ctx.restore();
+    }
+
+    renderRectangle(rect: Rectangle) {
+        const ctx = this.canvas.getContext('2d');
+        if (!ctx) {
+            throw new Error('Canvas context not found');
+        }
+
+        ctx.beginPath();
+        ctx.rect(rect.position.x, rect.position.y, rect.width, rect.height);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#000000';
+        ctx.fillStyle = rect.fillColor;
+        ctx.fill();
+        ctx.stroke();
     }
 
     clearRectangle(box: Rectangle) {
         if (this.rectangles.includes(box)) {
             this.rectangles.splice(this.rectangles.indexOf(box), 1);
         }
+    }
+
+    renderText(text: string, pos: Vector2D) {
+        const ctx = this.canvas.getContext('2d');
+        if (!ctx) {
+            throw new Error('Canvas context not found');
+        }
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '30px Arial';
+        ctx.fillText(text, pos.x, pos.y);
+    }
+
+    renderGrid(gridSize: number) {
+        const ctx = this.canvas.getContext('2d');
+        if (!ctx) {
+            throw new Error('Canvas context not found');
+        }
+
+        let zoom = this.camera.zoom;
+        let offset = this.screenToWorld(this.camera.worldPosition);
+        offset = Editor.snapToGrid(offset, gridSize);
+
+        const width = this.canvas.width * 4;
+        const height = this.canvas.height * 4;
+
+        const startX = 0;
+        const startY = 0;
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(256, 0, 256, 0.5)';
+        ctx.lineWidth = 1;
+
+        for (let x = startX; x < width; x += gridSize) {
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+        }
+
+        for (let y = startY; y < height; y += gridSize) {
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+        }
+
+        ctx.stroke();
     }
 }

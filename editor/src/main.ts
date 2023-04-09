@@ -1,6 +1,6 @@
 import Matter from 'matter-js';
 import { Engine } from './engine/engine';
-import { BoxCreator, Editor } from './plugins/BoxCreator';
+import { Editor } from './plugins/Editor';
 import { MousePan } from './plugins/MousePan';
 import { Renderer } from './renderer/renderer';
 import './style.css'; // Provides global styles
@@ -15,8 +15,7 @@ const engine = new Engine();
 engine.addPlugin(new MousePan(engine, renderer));
 engine.addPlugin(new Editor(engine, renderer));
 
-engine.start();
-renderer.start(engine);
+engine.start(renderer);
 
 // create ground
 const ground = Matter.Bodies.rectangle(

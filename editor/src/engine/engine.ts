@@ -1,5 +1,6 @@
 import Matter from "matter-js";
 import { Plugin, PluginHandler } from "./pluginHandler";
+import { Renderer } from "../renderer/renderer";
 
 export class Engine {
     public static readonly VERSION = '0.0.1';
@@ -22,7 +23,7 @@ export class Engine {
         this.pluginHandler.addPlugin(plugin);
     }
 
-    start() {
+    start(renderer: Renderer) {
         setInterval(() => {
             this.update();
         }, 1000 / this.fps);
