@@ -1,6 +1,6 @@
 import Matter from 'matter-js';
 import { Engine } from './engine/engine';
-import { BoxCreator } from './plugins/BoxCreator';
+import { BoxCreator, Editor } from './plugins/BoxCreator';
 import { MousePan } from './plugins/MousePan';
 import { Renderer } from './renderer/renderer';
 import './style.css'; // Provides global styles
@@ -12,6 +12,8 @@ if (!canvas) {
 const renderer = new Renderer(canvas);
 
 const engine = new Engine();
+engine.addPlugin(new MousePan(engine, renderer));
+engine.addPlugin(new Editor(engine, renderer));
 
 engine.start();
 renderer.start(engine);
@@ -45,12 +47,3 @@ const rightWall = Matter.Bodies.rectangle(
 
 // add bodies to the world
 engine.addBodies([ground, leftWall, rightWall]);
-
-// add a ball to the world
-engine.addBodies([Matter.Bodies.circle(200, 200, 80, {
-    render: {
-        fillStyle: '#FF0000',
-        strokeStyle: 'black',
-        lineWidth: 1,
-    },
-})]);
