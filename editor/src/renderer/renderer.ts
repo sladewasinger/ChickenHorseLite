@@ -138,7 +138,7 @@ export class Renderer {
         ctx.restore();
     }
 
-    renderRectangle(rect: Rectangle) {
+    renderRectangle(rect: Rectangle, fillColor?: string | null, strokeColor?: string | undefined) {
         const ctx = this.canvas.getContext('2d');
         if (!ctx) {
             throw new Error('Canvas context not found');
@@ -147,10 +147,17 @@ export class Renderer {
         ctx.beginPath();
         ctx.rect(rect.position.x, rect.position.y, rect.width, rect.height);
         ctx.lineWidth = 1;
-        ctx.strokeStyle = '#000000';
-        ctx.fillStyle = rect.fillColor;
+        if (fillColor) {
+            ctx.fillStyle = fillColor;
+        } else {
+            ctx.fillStyle = rect.fillColor || 'gray';
+        }
         ctx.fill();
-        ctx.stroke();
+
+        if (strokeColor) {
+            ctx.strokeStyle = strokeColor;
+            ctx.stroke();
+        }
     }
 
     clearRectangle(box: Rectangle) {

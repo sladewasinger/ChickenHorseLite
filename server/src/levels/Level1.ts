@@ -1,6 +1,7 @@
 import { Level } from "./Level.js";
 import { ShapeFactory } from "../utilities/ShapeFactory.js";
 import { SimpleBody } from "@/../../shared/SimpleBody.js";
+import levelJSON from "./level.json";
 
 export class Level1 implements Level {
     name: string = "Level 1";

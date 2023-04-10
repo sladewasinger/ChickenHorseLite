@@ -7,6 +7,7 @@ import { Level1 } from "./levels/Level1.js";
 import { Player } from "./models/Player.js";
 import { SimpleBody } from "shared/SimpleBody.js";
 import cors from 'cors';
+import { LevelLoader } from "./levels/LevelLoader.js";
 
 class App {
     private app: express.Application;
@@ -112,4 +113,4 @@ const env = process.env.NODE_ENV || "development";
 const port = +(process.env.PORT || 3000);
 const app = new App();
 app.start(port);
-app.loadLevel(new Level1());
+app.loadLevel(new LevelLoader());

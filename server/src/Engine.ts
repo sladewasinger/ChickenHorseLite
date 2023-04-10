@@ -110,17 +110,20 @@ export class Engine {
     }
 
     public loadLevel(level: Level) {
-        const [startingZone, goal, ...bodies] = level.getBodies();
+        const bodies = level.getBodies();
+
+        const startingZone = bodies.find((body) => body.label === "startingZone") as CustomBody;
+        const goal = bodies.find((body) => body.label === "goal") as CustomBody;
 
         if (bodies.some((body) => body.shape === undefined)) {
             throw new Error("Body type is not defined");
         }
 
-        if (startingZone.label !== "startingZone") {
+        if (!startingZone) {
             throw new Error("Starting zone is not defined");
         }
 
-        if (goal.label !== "goal") {
+        if (!goal) {
             throw new Error("Goal is not defined");
         }
 

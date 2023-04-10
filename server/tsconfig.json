@@ -15,10 +15,8 @@
       ]
     },
     "target": "ESNext", /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
-    // "module": "ESNext", /* Specify what module code is generated. */
-    // "lib": [
-    //   "ESNext"
-    // ], /* Specify a set of bundled library declaration files that describe the target runtime environment. */
+    "resolveJsonModule": true,
+    "module": "esnext", /* Specify what module code is generated. */
     "sourceMap": true,
     "moduleResolution": "node",
     "outDir": "./build", /* Specify an output folder for all emitted files. */

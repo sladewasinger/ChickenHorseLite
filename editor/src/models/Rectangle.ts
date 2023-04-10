@@ -7,6 +7,7 @@ export class Rectangle {
     width: number;
     height: number;
     fillColor: string;
+    type: string | undefined;
 
     constructor(position: Vector2D, width: number, height: number, fillColor: string = "#FF0000") {
         this.id = Math.random().toString(36).substring(2, 9);
