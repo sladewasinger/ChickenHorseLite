@@ -18,17 +18,11 @@ class Client {
     private socket: Socket | undefined;
     private engine: Engine | undefined;
     private renderer: PixiRenderer | undefined;
-    private canvas: HTMLCanvasElement;
 
     private nameForm: NameForm;
     private loadingIcon: LoadingIcon;
 
     constructor(private serverUrl: string) {
-        this.canvas = document.getElementById('canvas') as HTMLCanvasElement;
-        if (!this.canvas) {
-            throw new Error('Canvas not found');
-        }
-
         this.nameForm = new NameForm((value) => {
             this.sendEvent('registerPlayer', value);
         });
@@ -57,7 +51,7 @@ class Client {
             this.loadingIcon.hide();
             this.nameForm.show();
 
-            this.renderer = new PixiRenderer(this.canvas);
+            this.renderer = new PixiRenderer();
             this.engine = new Engine(this.renderer);
 
             this.engine.start(this.socket!);
@@ -135,6 +129,7 @@ class Client {
         //     this.socket.disconnect();
         // }
 
+        this.renderer?.destroy();
         delete this.renderer;
         delete this.engine;
     }

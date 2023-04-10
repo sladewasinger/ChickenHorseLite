@@ -21,8 +21,11 @@ export class PixiRenderer {
     // sprites
     chickenSprite: PIXI.Sprite | undefined;
 
-    constructor(canvas: HTMLCanvasElement) {
-        this.canvas = canvas;
+    constructor() {
+        this.canvas = document.createElement('canvas');
+        this.canvas.id = 'canvas';
+        document.body.appendChild(this.canvas);
+
         this.mouse = new Mouse(canvas);
         this.camera = new Camera(canvas);
 
@@ -36,6 +39,12 @@ export class PixiRenderer {
             backgroundColor: 0x000000,
             resolution: window.devicePixelRatio || 1,
         });
+    }
+
+    destroy() {
+        this.graphics = undefined;
+        this.app.destroy(true, { children: true, texture: true, baseTexture: true });
+        window.removeEventListener('resize', () => this.resizeCanvas());
     }
 
     resizeCanvas() {

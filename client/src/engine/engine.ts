@@ -76,6 +76,7 @@ export class Engine {
             let b = this.matterEngine.world.bodies.find(b => b.id === body.id);
             if (!b) {
                 const b = this.createBodyFromSimpleBody(body);
+                b.friction = 1;
                 this.addBody(b);
             } else {
                 Matter.Body.setPosition(b, body.position);
@@ -92,6 +93,7 @@ export class Engine {
                 const body = this.createBodyFromSimpleBody(player.body);
                 body.label = "player";
                 body.inertia = Infinity;
+                body.friction = 1;
 
                 this.addBody(body);
             } else {

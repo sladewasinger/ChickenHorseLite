@@ -112,6 +112,10 @@ export class Engine {
     public loadLevel(level: Level) {
         const bodies = level.getBodies();
 
+        for (const body of bodies) {
+            body.friction = 1;
+        }
+
         const startingZone = bodies.find((body) => body.label === "startingZone") as CustomBody;
         const goal = bodies.find((body) => body.label === "goal") as CustomBody;
 
@@ -157,6 +161,7 @@ export class Engine {
             false);
         playerBody.label = "player";
         playerBody.inertia = Infinity;
+        playerBody.friction = 1;
 
         newPlayer.bodyId = playerBody.id;
         Matter.World.add(this.engine.world, playerBody);
