@@ -75,6 +75,8 @@ export class Engine {
                 jumpDebounce: player.jumpDebounce,
                 jumpReleased: player.jumpReleased,
                 hasDoubleJump: player.hasDoubleJump,
+                friction: pBody.friction,
+                intertia: pBody.inertia,
                 body: ShapeFactory.GetSimpleBodyFromBody(pBody),
                 latestCommandId: player.latestCommandId,
             };
@@ -111,10 +113,6 @@ export class Engine {
 
     public loadLevel(level: Level) {
         const bodies = level.getBodies();
-
-        for (const body of bodies) {
-            body.friction = 1;
-        }
 
         const startingZone = bodies.find((body) => body.label === "startingZone") as CustomBody;
         const goal = bodies.find((body) => body.label === "goal") as CustomBody;
@@ -158,10 +156,9 @@ export class Engine {
             this.startingZone.position.x,
             this.startingZone.position.y,
             20,
-            false);
+            false,
+            { inertia: Infinity, friction: 0.2 });
         playerBody.label = "player";
-        playerBody.inertia = Infinity;
-        playerBody.friction = 1;
 
         newPlayer.bodyId = playerBody.id;
         Matter.World.add(this.engine.world, playerBody);
@@ -230,6 +227,13 @@ export class Engine {
 
         if (key === ' ') {
             player.jumpReleased = true;
+        }
+
+        if (key === 'a') {
+            player.leftJustReleased = true;
+        }
+        if (key === 'd') {
+            player.rightJustReleased = true;
         }
     }
 
@@ -313,6 +317,15 @@ export class Engine {
             Matter.Body.setVelocity(body, { x: moveVector.x, y: body.velocity.y });
             //Matter.Engine.update(this.engine, dt);
             //this.sendClientUpdate();
+        } else if (player.grounded) {
+            // if (player.leftJustReleased) {
+            //     player.leftJustReleased = false;
+            //     Matter.Body.setVelocity(body, { x: 0, y: body.velocity.y });
+            // }
+            // if (player.rightJustReleased) {
+            //     player.rightJustReleased = false;
+            //     Matter.Body.setVelocity(body, { x: 0, y: body.velocity.y });
+            // }
         }
     }
 
@@ -324,7 +337,7 @@ export class Engine {
 
         // ray cast down and see if we hit the ground
         const rayCollisions = Matter.Query
-            .ray(this.engine.world.bodies, body.position, { x: body.position.x, y: body.position.y + (<any>body).radius + 5 }, 10);
+            .ray(this.engine.world.bodies, body.position, { x: body.position.x, y: body.position.y + 20 + 5 }, 10);
         const filteredCollisions = rayCollisions
             .filter((collision) => (<any>collision).body.id !== player.bodyId)
             .filter((collision) => (<any>collision).body.isSensor !== true);
@@ -332,8 +345,10 @@ export class Engine {
         if (filteredCollisions.length > 0) {
             player.grounded = true;
             player.hasDoubleJump = true;
+            body.friction = 0.5;
         } else {
             player.grounded = false;
+            body.friction = 0.001;
         }
     }
 }

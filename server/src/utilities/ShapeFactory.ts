@@ -3,8 +3,8 @@ import { CustomBody } from "@/models/CustomBody";
 import Matter from "matter-js";
 
 export class ShapeFactory {
-    static CreateRectangle(x: number, y: number, width: number, height: number, isStatic: boolean) {
-        const body: CustomBody = Matter.Bodies.rectangle(x, y, width, height, { isStatic }) as CustomBody;
+    static CreateRectangle(x: number, y: number, width: number, height: number, isStatic: boolean, options = {}) {
+        const body: CustomBody = Matter.Bodies.rectangle(x, y, width, height, { isStatic, ...options }) as CustomBody;
         body.shape = "rectangle";
         body.width = width;
         body.height = height;
@@ -14,8 +14,8 @@ export class ShapeFactory {
         return body;
     }
 
-    static CreateCircle(x: number, y: number, radius: number, isStatic: boolean) {
-        const body = Matter.Bodies.circle(x, y, radius, { isStatic }) as CustomBody;
+    static CreateCircle(x: number, y: number, radius: number, isStatic: boolean, options = {}) {
+        const body = Matter.Bodies.circle(x, y, radius, { isStatic, ...options }) as CustomBody;
         body.shape = "circle";
         body.radius = radius;
         body.fillColor = "gray";
@@ -40,6 +40,10 @@ export class ShapeFactory {
             isSensor: body.isSensor,
             fillColor: body.fillColor,
             strokeColor: body.strokeColor,
+            friction: body.friction,
+            inertia: body.inertia,
+            frictionAir: body.frictionAir,
+            restitution: body.restitution,
         };
     }
 }

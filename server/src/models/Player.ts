@@ -15,6 +15,8 @@ export class Player {
     public hasDoubleJump: boolean = true;
     public jumpReleased: boolean = true;
     public latestCommandId: number = 0;
+    public leftJustReleased: boolean = false;
+    public rightJustReleased: boolean = false;
 
 
     constructor(id: string, name: string) {

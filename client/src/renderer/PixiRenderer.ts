@@ -26,8 +26,8 @@ export class PixiRenderer {
         this.canvas.id = 'canvas';
         document.body.appendChild(this.canvas);
 
-        this.mouse = new Mouse(canvas);
-        this.camera = new Camera(canvas);
+        this.mouse = new Mouse(this.canvas);
+        this.camera = new Camera(this.canvas);
 
         window.addEventListener('resize', () => this.resizeCanvas());
         this.resizeCanvas();
@@ -119,9 +119,9 @@ export class PixiRenderer {
                 }
                 body.idleAnimation.x = body.position.x - offset.x;
                 body.idleAnimation.y = body.position.y - offset.y;
-                if (body.velocity.x < -0.05) {
+                if (body.velocity.x < -0.5) {
                     body.idleAnimation.scale.x = -1;
-                } else {
+                } else if (body.velocity.x > 0.5) {
                     body.idleAnimation.scale.x = 1;
                 }
             } else {

@@ -92,8 +92,6 @@ export class Engine {
             if (!clientBody) {
                 const body = this.createBodyFromSimpleBody(player.body);
                 body.label = "player";
-                body.inertia = Infinity;
-                body.friction = 1;
 
                 this.addBody(body);
             } else {
@@ -140,6 +138,10 @@ export class Engine {
             radius: simpleBody.radius,
             width: simpleBody.width,
             height: simpleBody.height,
+            friction: simpleBody.friction,
+            frictionAir: simpleBody.frictionAir,
+            intertia: simpleBody.inertia,
+            restitution: simpleBody.restitution,
         };
 
         if (simpleBody.shape === 'circle') {
