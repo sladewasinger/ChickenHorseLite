@@ -21,6 +21,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   overflow: hidden;
+  background-color: #2d2d2d;
 }
 
 .title {

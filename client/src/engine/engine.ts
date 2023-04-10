@@ -76,6 +76,7 @@ export class Engine {
             let b = this.matterEngine.world.bodies.find(b => b.id === body.id);
             if (!b) {
                 const b = this.createBodyFromSimpleBody(body);
+                b.friction = 1;
                 this.addBody(b);
             } else {
                 Matter.Body.setPosition(b, body.position);
@@ -91,7 +92,6 @@ export class Engine {
             if (!clientBody) {
                 const body = this.createBodyFromSimpleBody(player.body);
                 body.label = "player";
-                body.inertia = Infinity;
 
                 this.addBody(body);
             } else {
@@ -138,6 +138,10 @@ export class Engine {
             radius: simpleBody.radius,
             width: simpleBody.width,
             height: simpleBody.height,
+            friction: simpleBody.friction,
+            frictionAir: simpleBody.frictionAir,
+            intertia: simpleBody.inertia,
+            restitution: simpleBody.restitution,
         };
 
         if (simpleBody.shape === 'circle') {

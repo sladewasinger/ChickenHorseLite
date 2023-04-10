@@ -21,10 +21,13 @@ export class PixiRenderer {
     // sprites
     chickenSprite: PIXI.Sprite | undefined;
 
-    constructor(canvas: HTMLCanvasElement) {
-        this.canvas = canvas;
-        this.mouse = new Mouse(canvas);
-        this.camera = new Camera(canvas);
+    constructor() {
+        this.canvas = document.createElement('canvas');
+        this.canvas.id = 'canvas';
+        document.body.appendChild(this.canvas);
+
+        this.mouse = new Mouse(this.canvas);
+        this.camera = new Camera(this.canvas);
 
         window.addEventListener('resize', () => this.resizeCanvas());
         this.resizeCanvas();
@@ -36,6 +39,12 @@ export class PixiRenderer {
             backgroundColor: 0x000000,
             resolution: window.devicePixelRatio || 1,
         });
+    }
+
+    destroy() {
+        this.graphics = undefined;
+        this.app.destroy(true, { children: true, texture: true, baseTexture: true });
+        window.removeEventListener('resize', () => this.resizeCanvas());
     }
 
     resizeCanvas() {
@@ -110,9 +119,9 @@ export class PixiRenderer {
                 }
                 body.idleAnimation.x = body.position.x - offset.x;
                 body.idleAnimation.y = body.position.y - offset.y;
-                if (body.velocity.x < -0.05) {
+                if (body.velocity.x < -0.5) {
                     body.idleAnimation.scale.x = -1;
-                } else {
+                } else if (body.velocity.x > 0.5) {
                     body.idleAnimation.scale.x = 1;
                 }
             } else {

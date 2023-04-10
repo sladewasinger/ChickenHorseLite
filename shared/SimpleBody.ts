@@ -8,6 +8,10 @@ export class SimpleBody {
     public angle: number;
     public angularVelocity: number;
     public isStatic: boolean = false;
+    public friction: number;
+    public inertia: number;
+    public frictionAir: number;
+    public restitution: number;
     public shape: SimpleBodyShape;
     public radius: number | undefined;
     public width: number | undefined;
@@ -24,7 +28,11 @@ export class SimpleBody {
         angle: number,
         angularVelocity: number,
         shape: SimpleBodyShape,
-        isStatic: boolean = false
+        isStatic: boolean = false,
+        friction: number,
+        frictionAir: number,
+        inertia: number,
+        restitution: number,
     ) {
         this.id = id;
         this.position = position;
@@ -34,18 +42,9 @@ export class SimpleBody {
         this.shape = shape;
         this.isStatic = isStatic;
         this.fillColor = 'red';
-    }
-
-    public static CreateCircle(x: number, y: number, radius: number, isStatic: boolean = false) {
-        const circle = new SimpleBody(0, new Vector2D(x, y), new Vector2D(0, 0), 0, 0, "circle", isStatic);
-        circle.radius = radius;
-        return circle;
-    }
-
-    public static CreateRectangle(x: number, y: number, width: number, height: number, isStatic: boolean = false) {
-        const rect = new SimpleBody(0, new Vector2D(x, y), new Vector2D(0, 0), 0, 0, "rectangle", isStatic);
-        rect.width = width;
-        rect.height = height;
-        return rect;
+        this.friction = friction;
+        this.frictionAir = frictionAir;
+        this.inertia = inertia;
+        this.restitution = restitution;
     }
 }
