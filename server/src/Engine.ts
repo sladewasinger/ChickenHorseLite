@@ -156,6 +156,7 @@ export class Engine {
             20,
             false);
         playerBody.label = "player";
+        playerBody.inertia = Infinity;
 
         newPlayer.bodyId = playerBody.id;
         Matter.World.add(this.engine.world, playerBody);

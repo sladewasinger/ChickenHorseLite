@@ -1,5 +1,5 @@
-# ChickenHorseLite
-A multiplayer obstacle course creation game.
+# Clucking Chaos
+A multiplayer obstacle course creation game. There might be chickens.
 
 https://lemon-flower-0ddad9610.2.azurestaticapps.net/
 

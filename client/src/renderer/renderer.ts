@@ -15,7 +15,7 @@ export class Renderer {
     rectangles: Rectangle[] = [];
     scale: number;
 
-    player: ClientPlayer | undefined;
+    ghostPlayer: ClientPlayer | undefined;
     playerPosInterpolated: Vector2D | undefined;
 
     constructor(canvas: HTMLCanvasElement) {
@@ -129,6 +129,7 @@ export class Renderer {
         offset.y -= this.canvas.height / 2;
 
         for (const body of bodies) {
+
             const vertices = body.vertices;
 
             ctx.beginPath();
@@ -152,12 +153,12 @@ export class Renderer {
             ctx.stroke();
         }
 
-        if (this.player) {
-            if (!this.player.body || !this.player.body.radius) {
+        if (this.ghostPlayer) {
+            if (!this.ghostPlayer.body || !this.ghostPlayer.body.radius) {
                 console.log('player body not found or radius is null');
             } else {
                 ctx.beginPath();
-                ctx.arc(this.player.body.position.x - offset.x, this.player.body.position.y - offset.y, this.player.body.radius!, 0, 2 * Math.PI, false);
+                ctx.arc(this.ghostPlayer.body.position.x - offset.x, this.ghostPlayer.body.position.y - offset.y, this.ghostPlayer.body.radius!, 0, 2 * Math.PI, false);
                 ctx.fillStyle = 'rgba(0, 255, 255, 0.5)';
                 ctx.fill();
                 ctx.lineWidth = 2;
@@ -180,7 +181,7 @@ export class Renderer {
     }
 
     renderGhostPlayer(player: ClientPlayer | undefined) {
-        this.player = player;
+        this.ghostPlayer = player;
     }
 
     renderGhostPlayerInterpolated(playerPositionInterpolated: Vector2D | undefined) {

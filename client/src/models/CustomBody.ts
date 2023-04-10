@@ -1,6 +1,6 @@
 import Matter from "matter-js";
 import { SimpleBodyShape } from "shared/SimpleBody.js";
-
+import * as PIXI from "pixi.js";
 
 export interface CustomBody extends Matter.Body {
     shape: SimpleBodyShape;
@@ -9,4 +9,6 @@ export interface CustomBody extends Matter.Body {
     radius: number | undefined;
     fillColor: string | undefined;
     strokeColor: string | undefined;
+    idleAnimation: PIXI.AnimatedSprite | undefined;
+    walkAnimation: PIXI.AnimatedSprite | undefined;
 }

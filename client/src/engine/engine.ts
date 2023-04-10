@@ -9,6 +9,7 @@ import { Renderer } from "renderer/renderer";
 import { Vector2D } from "shared/math/Vector2D";
 import { Socket } from "socket.io-client";
 import { CustomBody } from "models/CustomBody";
+import { PixiRenderer } from "renderer/PixiRenderer";
 
 export class Engine {
     public static readonly VERSION = '0.0.1';
@@ -30,7 +31,7 @@ export class Engine {
     inputDebounce: boolean = false;
     debugMode: boolean = false;
 
-    constructor(public renderer: Renderer) {
+    constructor(public renderer: PixiRenderer) {
         console.log(`Engine version ${Engine.VERSION} started`);
 
         this.pluginHandler = new PluginHandler();
@@ -90,6 +91,7 @@ export class Engine {
             if (!clientBody) {
                 const body = this.createBodyFromSimpleBody(player.body);
                 body.label = "player";
+                body.inertia = Infinity;
 
                 this.addBody(body);
             } else {
