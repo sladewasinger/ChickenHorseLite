@@ -12,11 +12,12 @@ import { MousePan } from './plugins/MousePan';
 import { ClientPlayer } from 'shared/ClientPlayer';
 import { Vector2D } from 'shared/math/Vector2D';
 import { i } from 'mathjs';
+import { PixiRenderer } from './renderer/PixiRenderer';
 
 class Client {
     private socket: Socket | undefined;
     private engine: Engine | undefined;
-    private renderer: Renderer | undefined;
+    private renderer: PixiRenderer | undefined;
     private canvas: HTMLCanvasElement;
 
     private nameForm: NameForm;
@@ -56,9 +57,8 @@ class Client {
             this.loadingIcon.hide();
             this.nameForm.show();
 
-            this.renderer = new Renderer(this.canvas);
+            this.renderer = new PixiRenderer(this.canvas);
             this.engine = new Engine(this.renderer);
-            this.engine.addPlugin(new MousePan(this.engine, this.renderer));
 
             this.engine.start(this.socket!);
             this.renderer.start(this.engine);
