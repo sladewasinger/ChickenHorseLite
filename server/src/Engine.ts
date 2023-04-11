@@ -75,8 +75,6 @@ export class Engine {
                 jumpDebounce: player.jumpDebounce,
                 jumpReleased: player.jumpReleased,
                 hasDoubleJump: player.hasDoubleJump,
-                friction: pBody.friction,
-                intertia: pBody.inertia,
                 body: ShapeFactory.GetSimpleBodyFromBody(pBody),
                 latestCommandId: player.latestCommandId,
             };
@@ -293,10 +291,13 @@ export class Engine {
         }
 
         const moveVector = new Vector2D(0, 0);
-        const speed = 5;
+        let speed = 5;
         const now = new Date().getTime();
         let dt = now;
 
+        if (!player.grounded) {
+            speed = 3;
+        }
         if (input['a']?.pressed) {
             moveVector.x -= 1 * speed;
             dt = dt - input['a'].time;
@@ -308,13 +309,16 @@ export class Engine {
             input['d'].time = now;
         }
         if (moveVector.length() > 0) {
-            // if (Math.abs(moveVector.x - body.velocity.x) >= speed * 0.5) { // switched directions?
-            //     const xAdjustment = moveVector.x * dt / 1000;
-            //     Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y });
-            //     console.log('xAjustment', xAdjustment);
-            // }
+            if (Math.abs(moveVector.x - body.velocity.x) >= speed * 0.25) { // switched directions?
+                const xAdjustment = moveVector.x * dt / 1000;
+                Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y });
+                console.log('xAjustment', xAdjustment);
+            }
 
-            Matter.Body.setVelocity(body, { x: moveVector.x, y: body.velocity.y });
+            let velX = moveVector.x;
+            if (Math.sign(velX) !== Math.sign(body.velocity.x) || Math.abs(velX) > Math.abs(body.velocity.x)) {
+                Matter.Body.setVelocity(body, { x: velX, y: body.velocity.y });
+            }
             //Matter.Engine.update(this.engine, dt);
             //this.sendClientUpdate();
         } else if (player.grounded) {
@@ -345,7 +349,7 @@ export class Engine {
         if (filteredCollisions.length > 0) {
             player.grounded = true;
             player.hasDoubleJump = true;
-            body.friction = 0.5;
+            body.friction = 0.05;
         } else {
             player.grounded = false;
             body.friction = 0.001;
