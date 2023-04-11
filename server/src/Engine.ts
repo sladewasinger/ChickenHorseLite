@@ -258,25 +258,23 @@ export class Engine {
 
 
                     const dt = new Date().getTime() - input[' '].time;
-                    // const baseVelocity = { ...body.velocity };
-                    // baseVelocity.y = -10;
+                    const baseVelocity = { x: body.velocity.x, y: -10 };
 
-                    // // // Apply gravity
-                    // const gravity = this.engine.gravity;
-                    // baseVelocity.y += gravity.y * dt / 1000;
+                    // Apply gravity
+                    const gravity = this.engine.gravity;
+                    baseVelocity.y += gravity.y * dt / 1000;
 
+                    const xAdjustment = baseVelocity.x * dt / 1000;
+                    const yAdjustment = (baseVelocity.y * (dt / 1000));
+                    console.log('basevelocity.y', baseVelocity.y);
+                    console.log('y adjustment', yAdjustment);
 
-                    // const xAdjustment = baseVelocity.x * dt / 1000;
-                    // const yAdjustment = (baseVelocity.y * (dt / 1000));
-                    // console.log('basevelocity.y', baseVelocity.y);
-                    // console.log('y adjustment', yAdjustment);
-
+                    Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y + yAdjustment });
                     Matter.Body.setVelocity(body, { x: body.velocity.x, y: -10 });
                     console.log("moving forward", dt, "ms");
                     //Matter.Engine.update(this.engine, dt);
                     this.sendClientUpdate();
                     //setTimeout(() => this.update(), 0);
-                    //Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y + yAdjustment });
                 } else if (player.hasDoubleJump) {
                     player.jumpDebounce = true;
                     player.hasDoubleJump = false;
@@ -312,7 +310,6 @@ export class Engine {
             if (Math.abs(moveVector.x - body.velocity.x) >= speed * 0.25) { // switched directions?
                 const xAdjustment = moveVector.x * dt / 1000;
                 Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y });
-                console.log('xAjustment', xAdjustment);
             }
 
             let velX = moveVector.x;
