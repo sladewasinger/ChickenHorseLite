@@ -75,8 +75,6 @@ export class Engine {
                 jumpDebounce: player.jumpDebounce,
                 jumpReleased: player.jumpReleased,
                 hasDoubleJump: player.hasDoubleJump,
-                friction: pBody.friction,
-                intertia: pBody.inertia,
                 body: ShapeFactory.GetSimpleBodyFromBody(pBody),
                 latestCommandId: player.latestCommandId,
             };
@@ -260,25 +258,23 @@ export class Engine {
 
 
                     const dt = new Date().getTime() - input[' '].time;
-                    // const baseVelocity = { ...body.velocity };
-                    // baseVelocity.y = -10;
+                    const baseVelocity = { x: body.velocity.x, y: -10 };
 
-                    // // // Apply gravity
-                    // const gravity = this.engine.gravity;
-                    // baseVelocity.y += gravity.y * dt / 1000;
+                    // Apply gravity
+                    const gravity = this.engine.gravity;
+                    baseVelocity.y += gravity.y * dt / 1000;
 
+                    const xAdjustment = baseVelocity.x * dt / 1000;
+                    const yAdjustment = (baseVelocity.y * (dt / 1000));
+                    console.log('basevelocity.y', baseVelocity.y);
+                    console.log('y adjustment', yAdjustment);
 
-                    // const xAdjustment = baseVelocity.x * dt / 1000;
-                    // const yAdjustment = (baseVelocity.y * (dt / 1000));
-                    // console.log('basevelocity.y', baseVelocity.y);
-                    // console.log('y adjustment', yAdjustment);
-
+                    Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y + yAdjustment });
                     Matter.Body.setVelocity(body, { x: body.velocity.x, y: -10 });
                     console.log("moving forward", dt, "ms");
                     //Matter.Engine.update(this.engine, dt);
                     this.sendClientUpdate();
                     //setTimeout(() => this.update(), 0);
-                    //Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y + yAdjustment });
                 } else if (player.hasDoubleJump) {
                     player.jumpDebounce = true;
                     player.hasDoubleJump = false;
@@ -293,10 +289,13 @@ export class Engine {
         }
 
         const moveVector = new Vector2D(0, 0);
-        const speed = 5;
+        let speed = 5;
         const now = new Date().getTime();
         let dt = now;
 
+        if (!player.grounded) {
+            speed = 3;
+        }
         if (input['a']?.pressed) {
             moveVector.x -= 1 * speed;
             dt = dt - input['a'].time;
@@ -308,13 +307,15 @@ export class Engine {
             input['d'].time = now;
         }
         if (moveVector.length() > 0) {
-            // if (Math.abs(moveVector.x - body.velocity.x) >= speed * 0.5) { // switched directions?
-            //     const xAdjustment = moveVector.x * dt / 1000;
-            //     Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y });
-            //     console.log('xAjustment', xAdjustment);
-            // }
+            if (Math.abs(moveVector.x - body.velocity.x) >= speed * 0.25) { // switched directions?
+                const xAdjustment = moveVector.x * dt / 1000;
+                Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y });
+            }
 
-            Matter.Body.setVelocity(body, { x: moveVector.x, y: body.velocity.y });
+            let velX = moveVector.x;
+            if (Math.sign(velX) !== Math.sign(body.velocity.x) || Math.abs(velX) > Math.abs(body.velocity.x)) {
+                Matter.Body.setVelocity(body, { x: velX, y: body.velocity.y });
+            }
             //Matter.Engine.update(this.engine, dt);
             //this.sendClientUpdate();
         } else if (player.grounded) {
@@ -345,7 +346,7 @@ export class Engine {
         if (filteredCollisions.length > 0) {
             player.grounded = true;
             player.hasDoubleJump = true;
-            body.friction = 0.5;
+            body.friction = 0.05;
         } else {
             player.grounded = false;
             body.friction = 0.001;

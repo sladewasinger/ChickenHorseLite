@@ -92,9 +92,13 @@ export class Engine {
             if (!clientBody) {
                 const body = this.createBodyFromSimpleBody(player.body);
                 body.label = "player";
+                console.log(player.body);
 
                 this.addBody(body);
             } else {
+                clientBody.friction = player.body.friction;
+                clientBody.restitution = player.body.restitution;
+                clientBody.frictionAir = player.body.frictionAir;
                 const serverPosition2D = new Vector2D(player.body.position.x, player.body.position.y);
                 const clientPosition2D = new Vector2D(clientBody.position.x, clientBody.position.y);
 
@@ -260,6 +264,10 @@ export class Engine {
         }
 
         const moveVector = new Vector2D(0, 0);
+        let speed = 5;
+        if (!this.myPlayer.grounded) {
+            speed = 3;
+        }
         if (this.input['a']?.pressed) {
             moveVector.x -= 1;
         }
@@ -270,7 +278,10 @@ export class Engine {
             this.inputDebounce = true;
             setTimeout(() => {
                 this.inputDebounce = false;
-                Matter.Body.setVelocity(body, { x: moveVector.x * 5, y: body.velocity.y });
+                let velX = moveVector.x * speed;
+                if (Math.sign(velX) !== Math.sign(body.velocity.x) || Math.abs(velX) > Math.abs(body.velocity.x)) {
+                    Matter.Body.setVelocity(body, { x: velX, y: body.velocity.y });
+                }
             }, 10);
         }
     }
@@ -292,7 +303,11 @@ export class Engine {
             .filter((collision) => validIds.includes(collision.bodyA.id) && validIds.includes(collision.bodyB.id));
 
         if (filteredCollisions.length > 0) {
+            body.friction = 0.05;
             player.grounded = true;
+        } else {
+            body.friction = 0.001;
+            player.grounded = false
         }
     }
 }
