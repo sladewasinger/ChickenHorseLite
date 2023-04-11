@@ -307,10 +307,10 @@ export class Engine {
             input['d'].time = now;
         }
         if (moveVector.length() > 0) {
-            if (Math.abs(moveVector.x - body.velocity.x) >= speed * 0.25) { // switched directions?
-                const xAdjustment = moveVector.x * dt / 1000;
-                Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y });
-            }
+            // if (Math.abs(moveVector.x - body.velocity.x) >= speed * 0.25) { // switched directions?
+            //     const xAdjustment = moveVector.x * dt / 1000;
+            //     Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y });
+            // }
 
             let velX = moveVector.x;
             if (Math.sign(velX) !== Math.sign(body.velocity.x) || Math.abs(velX) > Math.abs(body.velocity.x)) {
