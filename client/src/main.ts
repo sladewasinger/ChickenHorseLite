@@ -55,7 +55,6 @@ class Client {
             this.engine = new Engine(this.renderer);
 
             this.engine.start(this.socket!);
-            this.renderer.start(this.engine);
         });
 
         this.socket.on("event", (data: any) => {

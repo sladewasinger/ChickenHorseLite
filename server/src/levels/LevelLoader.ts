@@ -26,29 +26,17 @@ export class LevelLoader implements Level {
                 rect.label = "goal";
                 rect.fillColor = "rgba(255, 0, 0, 0.5)";
             }
+            if (box.type === 'joinGameZone') {
+                rect.label = "joinGameZone";
+                rect.fillColor = "rgba(0, 255, 0, 0.5)";
+            }
+            if (box.type === 'spawnZone') {
+                rect.label = "spawnZone";
+                rect.fillColor = "rgba(64, 64, 64, 0.5)";
+            }
 
             rects.push(rect);
         }
-
-        // const startingZone = ShapeFactory.CreateRectangle(
-        //     100 + 25,
-        //     height - 100 - 50,
-        //     200,
-        //     200,
-        //     true
-        // );
-        // startingZone.label = "startingZone";
-        // startingZone.fillColor = "rgba(0, 0, 255, 0.5)";
-
-        // const goal = ShapeFactory.CreateRectangle(
-        //     width - 100 - 25,
-        //     100,
-        //     200,
-        //     200,
-        //     true
-        // );
-        // goal.label = "goal";
-        // goal.fillColor = "red";
 
         return rects;
     }

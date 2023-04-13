@@ -20,9 +20,15 @@ export class Engine {
 
     private startingZone: CustomBody | undefined;
     private goal: CustomBody | undefined;
+    private joinGameZone: CustomBody | undefined;
+    private spawnZone: CustomBody | undefined;
     private players: Player[] = [];
     private maxDt: number = 1000 / 10;
-
+    private gameMode: "lobby" | "buildingStart" | "building" | "playingStart" | "playing" = "lobby";
+    private roundTimeMs: number = 0;
+    private roundTimeLimitMs: number = 60 * 1000;
+    private currentRound: number = 0;
+    private roundLimit: number = 3;
 
     constructor(
         private io: SocketIOServer,
@@ -53,11 +59,96 @@ export class Engine {
             this.sendClientUpdate();
         }
 
+        this.handleGameMode(gameDelta);
+
         this.lastUpdated = now;
 
         setTimeout(() => {
             this.update();
         }, 1000 / this.fps);
+    }
+
+    handleGameMode(deltaMs: number) {
+        if (!this.startingZone || !this.goal || !this.joinGameZone || !this.spawnZone) {
+            return;
+        }
+
+        if (this.gameMode === "lobby") {
+            const joinGameBoundary = Matter.Bounds.create(this.joinGameZone.vertices);
+            const allPlayersInStartingZone = this.players.every((player) => {
+                const body = this.engine.world.bodies.find((body) => body.id === player.bodyId) as CustomBody;
+                if (!body) {
+                    return false;
+                }
+                return Matter.Bounds.contains(joinGameBoundary, body.position);
+            }) && this.players.length > 0;
+            if (allPlayersInStartingZone) {
+                console.log("All players in starting zone, starting game")
+                this.gameMode = "buildingStart";
+            }
+        } else if (this.gameMode === "buildingStart") {
+            this.roundTimeMs = 0;
+            this.roundTimeLimitMs = 2 * 1000;
+            this.gameMode = "building";
+            this.currentRound++;
+            for (const player of this.players) {
+                const body = this.engine.world.bodies.find((body) => body.id === player.bodyId) as CustomBody;
+                if (!body) {
+                    continue;
+                }
+                Matter.Body.setPosition(body, { x: -100, y: -100 });
+                Matter.Body.setVelocity(body, { x: 0, y: 0 });
+                Matter.Body.setStatic(body, true);
+            }
+        } else if (this.gameMode === "building") {
+            this.roundTimeMs += deltaMs;
+            if (this.roundTimeMs > this.roundTimeLimitMs) {
+                this.gameMode = "playingStart";
+            }
+        } else if (this.gameMode === "playingStart") {
+            this.roundTimeMs = 0;
+            this.roundTimeLimitMs = 4 * 1000;
+            for (const player of this.players) {
+                const body = this.engine.world.bodies.find((body) => body.id === player.bodyId) as CustomBody;
+                if (!body) {
+                    continue;
+                }
+                Matter.Body.setPosition(body, { x: this.startingZone.position.x, y: this.startingZone.position.y });
+                Matter.Body.setVelocity(body, { x: 0, y: 0 });
+                Matter.Body.setStatic(body, false);
+            }
+            this.gameMode = "playing";
+        } else if (this.gameMode === "playing") {
+            if (this.players.length === 0) {
+                this.gameMode = "lobby";
+            }
+            this.roundTimeMs += deltaMs;
+            const goalBoundary = Matter.Bounds.create(this.goal.vertices);
+            const allPlayersInGoal = this.players.every((player) => {
+                const body = this.engine.world.bodies.find((body) => body.id === player.bodyId) as CustomBody;
+                if (!body) {
+                    return false;
+                }
+                return Matter.Bounds.contains(goalBoundary, body.position);
+            });
+            if (allPlayersInGoal || this.roundTimeMs > this.roundTimeLimitMs) {
+                if (this.currentRound >= this.roundLimit) {
+                    this.gameMode = "lobby";
+                    this.currentRound = 0;
+                    for (const player of this.players) {
+                        const body = this.engine.world.bodies.find((body) => body.id === player.bodyId) as CustomBody;
+                        if (!body) {
+                            continue;
+                        }
+                        Matter.Body.setPosition(body, { x: this.spawnZone.position.x, y: this.spawnZone.position.y });
+                        Matter.Body.setVelocity(body, { x: 0, y: 0 });
+                    }
+                    return;
+                }
+                this.gameMode = "buildingStart";
+                return;
+            }
+        }
     }
 
     private sendClientUpdate() {
@@ -85,6 +176,10 @@ export class Engine {
             players: clientPlayers,
             dynamicBodies: this.getDynamicBodies(),
             timeStampUTC: new Date().getTime(),
+            gameMode: this.gameMode,
+            timeLeftMs: this.roundTimeLimitMs - this.roundTimeMs,
+            currentRound: this.currentRound,
+            roundLimit: this.roundLimit,
         };
         this.io.volatile.emit("gameState", gameState); // volatile = don't buffer
         this.lastClientUpdate = now;
@@ -114,28 +209,38 @@ export class Engine {
 
         const startingZone = bodies.find((body) => body.label === "startingZone") as CustomBody;
         const goal = bodies.find((body) => body.label === "goal") as CustomBody;
+        const joinGameZone = bodies.find((body) => body.label === "joinGameZone") as CustomBody;
+        const spawnZone = bodies.find((body) => body.label === "spawnZone") as CustomBody;
 
         if (bodies.some((body) => body.shape === undefined)) {
             throw new Error("Body type is not defined");
         }
-
         if (!startingZone) {
             throw new Error("Starting zone is not defined");
         }
-
         if (!goal) {
             throw new Error("Goal is not defined");
+        }
+        if (!joinGameZone) {
+            throw new Error("Join game zone is not defined");
+        }
+        if (!spawnZone) {
+            throw new Error("Spawn zone is not defined");
         }
 
         Matter.World.add(this.engine.world, bodies);
 
         startingZone.isSensor = true;
         goal.isSensor = true;
+        joinGameZone.isSensor = true;
+        spawnZone.isSensor = true;
 
         this.startingZone = startingZone;
         this.goal = goal;
+        this.joinGameZone = joinGameZone;
+        this.spawnZone = spawnZone;
 
-        Matter.World.add(this.engine.world, [startingZone, goal]);
+        Matter.World.add(this.engine.world, [startingZone, goal, joinGameZone, spawnZone]);
     }
 
     public getPlayer(id: string) {
@@ -143,7 +248,7 @@ export class Engine {
     }
 
     public addPlayer(id: string, name: string): void {
-        if (!this.startingZone || !this.goal) {
+        if (!this.spawnZone || !this.goal) {
             throw new Error("Level is not loaded");
         }
 
@@ -151,8 +256,8 @@ export class Engine {
         this.players.push(newPlayer);
 
         const playerBody = ShapeFactory.CreateCircle(
-            this.startingZone.position.x,
-            this.startingZone.position.y,
+            this.spawnZone.position.x,
+            this.spawnZone.position.y,
             20,
             false,
             { inertia: Infinity, friction: 0.2 });
@@ -200,7 +305,7 @@ export class Engine {
         const utcTime = keyInput.utcTime;
 
         const utcNow = new Date().getTime();
-        console.log("keydown", key, utcNow - utcTime);
+        // console.log("keydown", key, utcNow - utcTime);
 
         player.input[key] = { pressed: true, time: utcTime };
         player.latestCommandId = keyInput.commandId;
@@ -218,7 +323,7 @@ export class Engine {
 
 
         const utcNow = new Date().getTime();
-        console.log("keyup", key, utcNow - utcTime);
+        // console.log("keyup", key, utcNow - utcTime);
 
         player.input[key] = { pressed: false, time: utcTime };
         player.latestCommandId = keyInput.commandId;
@@ -266,12 +371,12 @@ export class Engine {
 
                     const xAdjustment = baseVelocity.x * dt / 1000;
                     const yAdjustment = (baseVelocity.y * (dt / 1000));
-                    console.log('basevelocity.y', baseVelocity.y);
-                    console.log('y adjustment', yAdjustment);
+                    // console.log('basevelocity.y', baseVelocity.y);
+                    // console.log('y adjustment', yAdjustment);
 
                     Matter.Body.setPosition(body, { x: body.position.x + xAdjustment, y: body.position.y + yAdjustment });
                     Matter.Body.setVelocity(body, { x: body.velocity.x, y: -10 });
-                    console.log("moving forward", dt, "ms");
+                    // console.log("moving forward", dt, "ms");
                     //Matter.Engine.update(this.engine, dt);
                     this.sendClientUpdate();
                     //setTimeout(() => this.update(), 0);

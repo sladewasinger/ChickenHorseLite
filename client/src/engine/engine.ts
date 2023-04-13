@@ -202,15 +202,31 @@ export class Engine {
             this.handleLandingCheck(this.myPlayer);
             this.handleInput();
             const worldBody = this.matterEngine.world.bodies.find(body => body.id === this.myPlayer!.body.id);
-            if (worldBody) {
+            if (worldBody && this.gameState.gameMode !== "building") {
                 const worldBodyPosition = new Vector2D(worldBody.position.x, worldBody.position.y);
                 this.targetCameraPosition = this.renderer.camera.position.lerp(worldBodyPosition, 0.1);
+                this.renderer.panTo(this.targetCameraPosition.x, this.targetCameraPosition.y);
+            } else if (this.gameState.gameMode === "building") {
+                if (this.input['w']?.pressed) {
+                    this.targetCameraPosition = this.targetCameraPosition.add(new Vector2D(0, -10));
+                }
+                if (this.input['a']?.pressed) {
+                    this.targetCameraPosition = this.targetCameraPosition.add(new Vector2D(-10, 0));
+                }
+                if (this.input['s']?.pressed) {
+                    this.targetCameraPosition = this.targetCameraPosition.add(new Vector2D(0, 1));
+                }
+                if (this.input['d']?.pressed) {
+                    this.targetCameraPosition = this.targetCameraPosition.add(new Vector2D(10, 0));
+                }
                 this.renderer.panTo(this.targetCameraPosition.x, this.targetCameraPosition.y);
             }
         }
 
         Matter.Engine.update(this.matterEngine, delta);
         this.pluginHandler.runPlugins();
+
+        this.renderer.render(this.matterEngine, this.gameState);
 
         this.lastUpdated = Date.now();
     }

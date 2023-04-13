@@ -6,6 +6,7 @@ import { Mouse } from "./mouse";
 import { ClientPlayer } from "shared/ClientPlayer";
 import { Engine } from "engine/engine";
 import { CustomBody } from "models/CustomBody";
+import { GameState } from "shared/GameState";
 
 export class PixiRenderer {
     app: PIXI.Application;
@@ -20,6 +21,8 @@ export class PixiRenderer {
 
     // sprites
     chickenSprite: PIXI.Sprite | undefined;
+    roundTimerText: PIXI.Text | undefined;
+    gameModeText: PIXI.Text | undefined;
 
     constructor() {
         this.canvas = document.createElement('canvas');
@@ -86,11 +89,7 @@ export class PixiRenderer {
         }
     }
 
-    start(engine: Engine) {
-        window.requestAnimationFrame(() => this.render(engine.matterEngine));
-    }
-
-    render(engine: Matter.Engine) {
+    render(engine: Matter.Engine, gameState: GameState) {
         const bodies = Matter.Composite.allBodies(engine.world).map(x => x as CustomBody);
         if (!this.graphics) {
             this.graphics = new PIXI.Graphics();
@@ -103,6 +102,15 @@ export class PixiRenderer {
         // center camera on canvas
         offset.x -= this.canvas.width / 2;
         offset.y -= this.canvas.height / 2;
+
+        // cleanup old sprites
+        for (const child of this.app.stage.children) {
+            if (child instanceof PIXI.AnimatedSprite) {
+                if (!bodies.find(x => x.idleAnimation === child)) {
+                    this.app.stage.removeChild(child);
+                }
+            }
+        }
 
         for (const body of bodies) {
             if (body.label === 'player') {
@@ -140,7 +148,57 @@ export class PixiRenderer {
             }
         }
 
-        window.requestAnimationFrame(() => this.render(engine));
+        if (gameState.timeLeftMs > 0) {
+            this.renderText(
+                "timeLeft",
+                `Time Left: ${this.millisToMinutesAndSeconds(gameState.timeLeftMs)}`,
+                new Vector2D(this.canvas.width / 2, 50)
+            );
+        } else {
+            this.clearText("timeLeft");
+        }
+
+        this.renderText(
+            "gameMode",
+            `${gameState.currentRound}/${gameState.roundLimit} | Game Mode: ${gameState.gameMode}`,
+            new Vector2D(this.canvas.width / 2, 100)
+        );
+    }
+
+    private textObjects: { [id: string]: PIXI.Text } = {};
+    renderText(id: string, text: string, position: Vector2D) {
+        if (this.textObjects[id]) {
+            this.textObjects[id].text = text;
+            this.textObjects[id].x = position.x;
+            this.textObjects[id].y = position.y;
+            return;
+        }
+
+        const textObj = new PIXI.Text(text, {
+            fontFamily: 'Arial',
+            fontSize: 24,
+            fill: 0xffffff,
+            align: 'center'
+        });
+        textObj.anchor.set(0.5, 0.5);
+        textObj.x = position.x;
+        textObj.y = position.y;
+        this.app.stage.addChild(textObj);
+
+        this.textObjects[id] = textObj;
+    }
+
+    clearText(id: string) {
+        if (this.textObjects[id]) {
+            this.app.stage.removeChild(this.textObjects[id]);
+            delete this.textObjects[id];
+        }
+    }
+
+    millisToMinutesAndSeconds(millis: number) {
+        let minutes = Math.floor(millis / 60000);
+        let seconds = +((millis % 60000) / 1000).toFixed(0);
+        return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
     }
 
     renderGhostPlayer(player: ClientPlayer | undefined) {
